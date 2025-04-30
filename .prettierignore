@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.html
+build
+coverage
+.nyc_output/
+doc/api/openapi/openapi.yml.hbs
+doc/api/openapi/openapi.yml
+*.handlebars
