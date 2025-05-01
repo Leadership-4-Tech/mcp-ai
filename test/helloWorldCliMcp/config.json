@@ -1,0 +1,11 @@
+{
+  "mcps": [
+    {
+      "id": "hello-world-cli",
+      "connection": {
+        "type": "cli",
+        "path": "tsx ./test/helloWorldCliMcp/hello.ts"
+      }
+    }
+  ]
+}

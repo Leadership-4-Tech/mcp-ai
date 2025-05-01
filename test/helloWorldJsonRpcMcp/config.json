@@ -1,0 +1,11 @@
+{
+  "mcps": [
+    {
+      "id": "hello-world-jsonrpc",
+      "connection": {
+        "type": "cli-rpc",
+        "path": "tsx ./test/helloWorldJsonRpcMcp/run.mts"
+      }
+    }
+  ]
+}

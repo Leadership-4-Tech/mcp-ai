@@ -4,7 +4,7 @@ MCP servers are pretty sweet but sometimes you need to aggregate them all togeth
 
 ## Overview
 
-A flexible, type-safe tool integration library for managing and executing tools across different providers (Claude, OpenAI, Bedrock).
+A flexible, type-safe tool integration library for managing and executing tools across different providers (Claude, OpenAI, AWS Bedrock Claude).
 
 ## Features
 
@@ -14,6 +14,7 @@ A flexible, type-safe tool integration library for managing and executing tools 
 - 里 Functional programming approach
 
 ## Dependencies
+
 Only 1 to keep it slim, but functional.
 
 - modern-async
@@ -25,9 +26,11 @@ npm install mcp-integrator
 ```
 
 ## Quick Start
+
 Here is a quick start guide.
 
-### High Level Steps 
+### High Level Steps
+
 Here is a high level steps to use the library.
 
 0. Create a configuration that has the MCP tools to aggregate / integrate. (format shown below)
@@ -39,6 +42,7 @@ Here is a high level steps to use the library.
 6. Use this library to formulate a LLM specific reply passing the previous response, and the tool responses.
 
 ### Config Format
+
 The configuration is a json/object in the following format (examples):
 
 ```typescript
@@ -55,6 +59,7 @@ type Tool = {
   parameters: Record<string, unknown>
 }
 ```
+
 ```json
 {
   "tools": [
@@ -118,6 +123,7 @@ const openAIIntegration = await loadFromFile(
 ```
 
 ### Get the formatted tools (Claude shown)
+
 ```typescript
 const response = await anthropic.messages.create({
   model: 'claude-3-opus-20240229',
@@ -127,13 +133,15 @@ const response = await anthropic.messages.create({
   messages: [
     {
       role: 'user',
-      content: 'What is the weather like in New York today? Also, can you check the current stock price of Apple?'
-    }
-  ]
+      content:
+        'What is the weather like in New York today? Also, can you check the current stock price of Apple?',
+    },
+  ],
 })
 ```
 
 ### Determine if you need to make tool calls.
+
 ```typescript
 const toolCalls = claudeIntegration.getToolCalls(response)
 if (!toolCalls) {
@@ -142,17 +150,20 @@ if (!toolCalls) {
 ```
 
 ### Execute tool calls
+
 ```typescript
 const toolResponses = await claudeIntegration.executeToolCalls(toolCalls)
 ```
 
 ### Combine tool results with previous results and call LLM provider
+
 ```typescript
-const properPayload = claudeIntegration.formulateResponse(response, toolResponses)
+const properPayload = claudeIntegration.formulateResponse(
+  response,
+  toolResponses
+)
 const nextResponse = await claude.messages.create(properPayload)
-
 ```
-
 
 ## Error Handling
 
@@ -163,7 +174,7 @@ const nextResponse = await claude.messages.create(properPayload)
 
 - Claude
 - OpenAI
-- Bedrock
+- AWS Bedrock Claude
 
 ## Advanced Usage
 
@@ -185,4 +196,5 @@ const customToolResponse = await integration.executeToolCalls(toolCalls, {
 5. Create a new Pull Request
 
 ## License
+
 GPL v3

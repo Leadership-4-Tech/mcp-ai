@@ -1,0 +1,11 @@
+{
+  "mcps": [
+    {
+      "id": "filesystem",
+      "connection": {
+        "type": "cli-rpc",
+        "path": "npx -y @modelcontextprotocol/server-filesystem /home/mcornwell/code"
+      }
+    }
+  ]
+}

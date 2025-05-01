@@ -1,0 +1,15 @@
+{
+  "server": {
+    "type": "http"
+  },
+  "mcps": [
+    {
+      "id": "hello-world-http",
+      "connection": {
+        "type": "http",
+        "url": "http://localhost:3000",
+        "timeout": 5000
+      }
+    }
+  ]
+}
