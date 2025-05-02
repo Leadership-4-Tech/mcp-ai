@@ -2,6 +2,12 @@
 
 > Connect AI systems to MCPs, easily.
 
+<<<<<<< Updated upstream
+=======
+![Unit Tests](https://github.com/leadership-4-tech/mcp-ai/actions/workflows/ut.yml/badge.svg?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/Node-In-Layers/nil-core/badge.svg?branch=try-again)](https://coveralls.io/github/Node-In-Layers/nil-core?branch=try-again)
+
+>>>>>>> Stashed changes
 MCP servers are a pretty sweet idea, but having the ability to integrate them all together into a system, or package them up and make them available, should be easier. This is where this library comes in.
 
 ## Installation
