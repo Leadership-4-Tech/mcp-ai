@@ -10,6 +10,16 @@ MCP servers are a pretty sweet idea, but having the ability to integrate them al
 npm install mcp-ai
 ```
 
+## Running Aggregator
+
+If you install this library globally it will add the `mcp-aggregator.mts` script to be used for starting up aggregators in any context.
+
+```bash
+npm i -g mcp-ai
+```
+
+NOTE: You must have tsx installed for it to run.
+
 ## Overview
 
 This library is made up of two different domains.
@@ -298,9 +308,13 @@ A complete configuration combining both integrator and aggregator:
 }
 ```
 
-## Environment Variables
+## Testing
 
-Depending on the provider, you may need to set these environment variables:
+There are a few examples included in the
+
+### Environment Variables
+
+Depending on the provider, you may need to set these environment variables for tests:
 
 - OpenAI: `OPENAI_API_KEY`
 - Claude: `ANTHROPIC_API_KEY`

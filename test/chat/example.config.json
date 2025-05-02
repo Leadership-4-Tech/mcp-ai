@@ -3,7 +3,7 @@
     "connection": {
       "type": "cli",
       "path": "tsx",
-      "args": ["./bin/cliServer.mts", "./this-config-but-yours.json"]
+      "args": ["./bin/mcp-aggregator.mts", "./this-config-but-yours.json"]
     },
     "provider": "openai",
     "model": "gpt-4o",
