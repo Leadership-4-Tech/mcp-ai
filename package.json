@@ -19,6 +19,11 @@
   "bin": {
     "mcp-aggregator": "./bin/runMcpAggregator.mts"
   },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
   "scripts": {
     "build": "rm -Rf ./dist && tsc -p ./tsconfig.json && cp package.json ./dist && cp README.md ./dist",
     "build:watch": "nodemon -e '*' --watch ./src --exec \"npm run build || exit 1\"",

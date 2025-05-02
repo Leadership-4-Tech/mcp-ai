@@ -1,6 +1,9 @@
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import { ClientCapabilities } from '@modelcontextprotocol/sdk/types.js'
 
+/**
+ * A value that can be serialized to JSON
+ */
 export type JsonAble =
   | string
   | number
@@ -9,17 +12,26 @@ export type JsonAble =
   | JsonAble[]
   | { [key: string]: JsonAble }
 
+/**
+ * Base configuration for an MCP instance
+ */
 export type McpConfig = Readonly<{
   transport: Transport
   capabilities?: ClientCapabilities
 }>
 
+/**
+ * Supported AI providers
+ */
 export enum Provider {
   Claude = 'claude',
   OpenAI = 'openai',
   AwsBedrockClaude = 'aws-bedrock-claude',
 }
 
+/**
+ * Definition of an MCP tool
+ */
 export type McpTool = Readonly<{
   name: string
   description: string
@@ -27,6 +39,9 @@ export type McpTool = Readonly<{
   outputSchema?: OpenAPISchema
 }>
 
+/**
+ * CLI connection configuration
+ */
 export type CliConnection = Readonly<{
   type: 'cli'
   path: string
@@ -35,17 +50,17 @@ export type CliConnection = Readonly<{
   cwd?: string
 }>
 
+/**
+ * SSE connection configuration
+ */
 export type SseConnection = Readonly<{
   type: 'sse'
   url: string
 }>
 
-export type Connection =
-  | CliConnection 
-  | HttpConnection
-  | WsConnection
-  | SseConnection
-
+/**
+ * HTTP connection configuration
+ */
 export type HttpConnection = Readonly<{
   type: 'http'
   url: string
@@ -57,6 +72,9 @@ export type HttpConnection = Readonly<{
   }>
 }>
 
+/**
+ * WebSocket connection configuration
+ */
 export type WsConnection = Readonly<{
   type: 'ws'
   url: string
@@ -68,6 +86,18 @@ export type WsConnection = Readonly<{
   }>
 }>
 
+/**
+ * Union type of all possible connection types
+ */
+export type Connection =
+  | CliConnection 
+  | HttpConnection
+  | WsConnection
+  | SseConnection
+
+/**
+ * MCP Integrator configuration
+ */
 export type McpIntegratorConfig = Readonly<{
   connection: Connection
   provider: Provider
@@ -75,33 +105,64 @@ export type McpIntegratorConfig = Readonly<{
   maxParallelCalls?: number
 }>
 
+/**
+ * HTTP server configuration
+ */
 export type HttpServerConfig = Readonly<{
-  type: 'http'
-  port: number
-  host?: string
+  connection: Readonly<{
+    type: 'http'
+    url: string
+    headers?: Readonly<Record<string, string>>
+    timeout?: number
+    retry?: Readonly<{
+      attempts: number
+      backoff: number
+    }>
+  }>
+  /** Path to handle MCP requests. Defaults to '/' */
+  path?: string
 }>
 
+/**
+ * WebSocket server configuration
+ */
 export type WsServerConfig = Readonly<{
-  type: 'ws'
-  port: number
-  host?: string
+  connection: WsConnection
 }>
 
+/**
+ * CLI server configuration
+ */
 export type CliServerConfig = Readonly<{
-  type: 'cli'
+  connection: CliConnection
 }>
 
+/**
+ * SSE server configuration
+ */
 export type SseServerConfig = Readonly<{
-  type: 'sse',
-  url: string
+  connection: Readonly<{
+    type: 'sse'
+    url: string
+  }>
+  /** Path to establish SSE connection. Defaults to '/' */
+  path?: string
+  /** Path to handle SSE messages. Defaults to '/messages' */
+  messagesPath?: string
 }>
 
+/**
+ * Union type of all possible server configurations
+ */
 export type ServerConfig =
   | HttpServerConfig
   | WsServerConfig
   | CliServerConfig
   | SseServerConfig
 
+/**
+ * Base configuration for MCP Aggregator
+ */
 export type McpAggregatorConfigBase = Readonly<{
   mcps: Readonly<
     Readonly<{
@@ -112,35 +173,59 @@ export type McpAggregatorConfigBase = Readonly<{
   maxParallelCalls?: number
 }>
 
+/**
+ * MCP Aggregator configuration with HTTP server
+ */
 export type McpAggregatorConfigWithHttpServer = McpAggregatorConfigBase & Readonly<{
   server: HttpServerConfig
 }>
 
+/**
+ * MCP Aggregator configuration with WebSocket server
+ */
 export type McpAggregatorConfigWithWsServer = McpAggregatorConfigBase & Readonly<{
   server: WsServerConfig
 }>
 
+/**
+ * MCP Aggregator configuration with CLI server
+ */
 export type McpAggregatorConfigWithCliServer = McpAggregatorConfigBase & Readonly<{
   server: CliServerConfig
 }>
 
+/**
+ * MCP Aggregator configuration with SSE server
+ */
 export type McpAggregatorConfigWithSseServer = McpAggregatorConfigBase & Readonly<{
   server: SseServerConfig
 }>
 
+/**
+ * Union type of all possible MCP Aggregator configurations
+ */
 export type McpAggregatorConfig =
   | McpAggregatorConfigWithHttpServer
   | McpAggregatorConfigWithWsServer
   | McpAggregatorConfigWithCliServer
   | McpAggregatorConfigWithSseServer
 
+/**
+ * Full configuration for both MCP Integrator and Aggregator
+ */
 export type McpIntegratorFullConfig = Readonly<{
   integrator: McpIntegratorConfig
   aggregator: McpAggregatorConfig
 }>
 
+/**
+ * Current version of the MCP library
+ */
 export const LibraryVersion = '1.0.0'
 
+/**
+ * Default client configurations for MCP Integrator and Aggregator
+ */
 export const McpClientConfigs = {
   integrator: {
     name: 'mcp-integrator',
@@ -152,6 +237,9 @@ export const McpClientConfigs = {
   }
 } as const
 
+/**
+ * OpenAPI schema definition for tool parameters
+ */
 export type OpenAPISchema = Readonly<{
   type: 'object'
   properties: Readonly<Record<string, {

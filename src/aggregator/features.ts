@@ -2,43 +2,17 @@ import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { McpAggregatorConfig, JsonAble, McpClientConfigs } from '../common/types.js'
 import { create as createServices } from './services.js'
-import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 
 export const create = async (config: McpAggregatorConfig) => {
-  const services = createServices(config)
+  let services: any
 
-  const tools = await services.getTools()
-
-  const server = new Server({
-    name: 'mcp-aggregator',
-    version: '0.0.1',
-    tools,
-  })
-
-  const client = new Client(McpClientConfigs.aggregator)
-
-  const connect = async (transport: Transport) => {
-    await server.connect(transport)
-  }
-
-  const disconnect = async (transport: Transport) => {
-    await transport.close()
-  }
-
-  const dispose = async () => {
-    await server.close()
-    await services.disconnect()
-  }
-
-  const initialize = async () => {
+  const connect = async () => {
+    services = createServices(config)
     await services.connect()
-    return {
-      state: 'initialized',
-      initialize,
-      getTools,
-      executeTool,
-      dispose,
-    }
+  }
+
+  const disconnect = async () => {
+    await services.disconnect()
   }
 
   const getTools = async () => {
@@ -53,10 +27,9 @@ export const create = async (config: McpAggregatorConfig) => {
   }
 
   return {
-    state: 'created',
-    initialize,
     getTools,
     executeTool,
-    dispose,
+    connect,
+    disconnect,
   }
 }
