@@ -11,6 +11,8 @@ The test requires a configuration file (`config.json`) that specifies:
 
 You'll need to update the example so that it works for your situation.
 
+In order to run this, you must first run the aggregator pointed to the same configuration file.
+
 ### Required Configuration Fields
 
 For the integrator:
