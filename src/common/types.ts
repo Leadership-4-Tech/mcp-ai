@@ -22,14 +22,12 @@ export enum Provider {
 
 export type McpTool = Readonly<{
   name: string
-  description?: string
-  inputSchema: Readonly<{
-    type: 'object'
-    properties?: Readonly<Record<string, unknown>>
-  }>
+  description: string
+  inputSchema: OpenAPISchema
+  outputSchema?: OpenAPISchema
 }>
 
-export type SimpleCliConnection = Readonly<{
+export type CliConnection = Readonly<{
   type: 'cli'
   path: string
   args?: string[]
@@ -37,21 +35,16 @@ export type SimpleCliConnection = Readonly<{
   cwd?: string
 }>
 
-export type RpcCliConnection = Readonly<{
-  type: 'cli-rpc'
-  path: string
-  args?: string[]
-  env?: Readonly<Record<string, string>>
-  cwd?: string
+export type SseConnection = Readonly<{
+  type: 'sse'
+  url: string
 }>
 
-export type Connection = Readonly<
-  | SimpleCliConnection
-  | RpcCliConnection
+export type Connection =
+  | CliConnection 
   | HttpConnection
   | WsConnection
-  | DockerConnection
->
+  | SseConnection
 
 export type HttpConnection = Readonly<{
   type: 'http'
@@ -75,82 +68,41 @@ export type WsConnection = Readonly<{
   }>
 }>
 
-export type DockerExecutionStrategy =
-  | 'container-per-request'
-  | 'persistent-container'
-
-export type DockerVolume = Readonly<{
-  hostPath: string
-  containerPath: string
-  mode?: 'ro' | 'rw'
-}>
-
-export type DockerCommonOptions = Readonly<{
-  autoRemove?: boolean
-  network?: string
-  volumes?: Readonly<DockerVolume[]>
-}>
-
-export type ContainerPerRequestOptions = Readonly<{
-  tty?: boolean
-  attachStdin?: boolean
-  attachStdout?: boolean
-  attachStderr?: boolean
-}>
-
-export type PersistentContainerOptions = Readonly<{
-  restartPolicy?: 'no' | 'always' | 'unless-stopped' | 'on-failure'
-  healthCheck?: Readonly<{
-    test: string[]
-    interval?: number
-    timeout?: number
-    retries?: number
-    startPeriod?: number
-  }>
-}>
-
-export type ContainerPerRequestConnection = Readonly<{
-  type: 'docker'
-  strategy: 'container-per-request'
-  image: string
-  command?: Readonly<string[]>
-  env?: Readonly<Record<string, string>>
-  options?: Readonly<
-    DockerCommonOptions & {
-      containerPerRequest: ContainerPerRequestOptions
-    }
-  >
-}>
-
-export type PersistentContainerConnection = Readonly<{
-  type: 'docker'
-  strategy: 'persistent-container'
-  image: string
-  command?: Readonly<string[]>
-  env?: Readonly<Record<string, string>>
-  options?: Readonly<
-    DockerCommonOptions & {
-      persistentContainer: PersistentContainerOptions
-    }
-  >
-}>
-
-export type DockerConnection =
-  | ContainerPerRequestConnection
-  | PersistentContainerConnection
-
 export type McpIntegratorConfig = Readonly<{
   connection: Connection
   provider: Provider
+  includeListToolsTool?: boolean
   maxParallelCalls?: number
 }>
 
-export type ServerConfig = Readonly<{
-  type: 'http' | 'ws' | 'cli' | 'cli-rpc'
+export type HttpServerConfig = Readonly<{
+  type: 'http'
+  port: number
+  host?: string
 }>
 
-export type McpAggregatorConfig = Readonly<{
-  server?: ServerConfig
+export type WsServerConfig = Readonly<{
+  type: 'ws'
+  port: number
+  host?: string
+}>
+
+export type CliServerConfig = Readonly<{
+  type: 'cli'
+}>
+
+export type SseServerConfig = Readonly<{
+  type: 'sse',
+  url: string
+}>
+
+export type ServerConfig =
+  | HttpServerConfig
+  | WsServerConfig
+  | CliServerConfig
+  | SseServerConfig
+
+export type McpAggregatorConfigBase = Readonly<{
   mcps: Readonly<
     Readonly<{
       id: string
@@ -160,7 +112,52 @@ export type McpAggregatorConfig = Readonly<{
   maxParallelCalls?: number
 }>
 
+export type McpAggregatorConfigWithHttpServer = McpAggregatorConfigBase & Readonly<{
+  server: HttpServerConfig
+}>
+
+export type McpAggregatorConfigWithWsServer = McpAggregatorConfigBase & Readonly<{
+  server: WsServerConfig
+}>
+
+export type McpAggregatorConfigWithCliServer = McpAggregatorConfigBase & Readonly<{
+  server: CliServerConfig
+}>
+
+export type McpAggregatorConfigWithSseServer = McpAggregatorConfigBase & Readonly<{
+  server: SseServerConfig
+}>
+
+export type McpAggregatorConfig =
+  | McpAggregatorConfigWithHttpServer
+  | McpAggregatorConfigWithWsServer
+  | McpAggregatorConfigWithCliServer
+  | McpAggregatorConfigWithSseServer
+
 export type McpIntegratorFullConfig = Readonly<{
   integrator: McpIntegratorConfig
   aggregator: McpAggregatorConfig
+}>
+
+export const LibraryVersion = '1.0.0'
+
+export const McpClientConfigs = {
+  integrator: {
+    name: 'mcp-integrator',
+    version: LibraryVersion
+  },
+  aggregator: {
+    name: 'mcp-aggregator',
+    version: LibraryVersion
+  }
+} as const
+
+export type OpenAPISchema = Readonly<{
+  type: 'object'
+  properties: Readonly<Record<string, {
+    type: string
+    description?: string
+    enum?: Readonly<string[]>
+  }>>
+  required?: Readonly<string[]>
 }>

@@ -1,265 +1,220 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
-import { WebSocketClientTransport } from '@modelcontextprotocol/sdk/client/websocket.js'
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import {
   McpIntegratorConfig,
   Provider,
-  HttpConnection,
-  WsConnection,
-  RpcCliConnection,
+  McpClientConfigs,
+  McpTool,
 } from '../common/types.js'
-import { toMcpConfig } from '../common/libs.js'
+import { createTransport } from '../common/libs.js'
 import {
-  IntegratorService,
+  LLMIntegrationService,
   ToolFormat,
-  Response,
+  ProviderResponse,
   ToolCall,
   ToolResult,
+  ProviderRequest,
+  McpIntegrator,
+  ClaudeToolUseContent,
+  AwsBedrockClaudeToolUseContent,
 } from './types.js'
+import { asyncMap } from 'modern-async'
 
 const createExecuteToolCalls =
   (client: Client) =>
   async (calls: readonly ToolCall[]): Promise<readonly ToolResult[]> =>
-    Promise.all(
-      calls.map(async call => {
-        const result = await client.callTool({
-          name: call.name,
-          input: call.input,
-        })
-        return result.result
+    asyncMap(calls, async call => {
+      const result = await client.callTool({
+        id: call.id,
+        name: call.name,
+        // @ts-ignore I have absolutely seen the requirement to have this.
+        arguments: call.input,
+        input: call.input,
       })
-    )
+      return {
+        id: call.id,
+        content: result.content
+      }
+    }, 10)
 
 const createSharedComponents = (config: McpIntegratorConfig) => {
-  const client = new Client({
-    name: 'mcp-integrator',
-    version: '0.0.1',
-  })
-
-  let transport
-  switch (config.connection.type) {
-    case 'http': {
-      const httpConfig = config.connection as HttpConnection
-      transport = new StreamableHTTPClientTransport(
-        new URL(httpConfig.url),
-        toMcpConfig(httpConfig)
-      )
-      break
-    }
-    case 'ws': {
-      const wsConfig = config.connection as WsConnection
-      transport = new WebSocketClientTransport(new URL(wsConfig.url))
-      break
-    }
-    case 'cli': {
-      const cliConfig = config.connection as unknown as RpcCliConnection
-      transport = new StdioClientTransport({
-        command: cliConfig.path,
-        args: cliConfig.args,
-        env: cliConfig.env,
-        cwd: cliConfig.cwd,
-      })
-      break
-    }
-    default:
-      throw new Error(`Unsupported connection type: ${config.connection.type}`)
-  }
-
+  const transport = createTransport(config.connection)
+  const client = new Client(McpClientConfigs.integrator)
   const executeToolCalls = createExecuteToolCalls(client)
-
-  return {
-    transport,
-    client,
-    executeToolCalls,
-  }
+  return { transport, client, executeToolCalls }
 }
 
-const createClaudeService = (
-  config: McpIntegratorConfig
-): IntegratorService => {
-  const { transport, client, executeToolCalls } = createSharedComponents(config)
 
-  const connect = async () => {
-    await client.connect(transport)
-  }
-
-  const disconnect = async () => {
-    await client.close()
-  }
-
-  const getTools = async () => {
-    const result = await client.listTools()
-    return result.tools
-  }
-
-  const formatToolsForProvider = (
-    tools: readonly ToolFormat[]
-  ): readonly ToolFormat[] =>
+const createOpenAIService = (): LLMIntegrationService<Provider.OpenAI> => {
+  const formatToolsForProvider = (tools: readonly McpTool[]): readonly ToolFormat<Provider.OpenAI>[] =>
     tools.map(tool => ({
-      name: tool.name,
-      description: tool.description,
-      input_schema: tool.input_schema,
-    }))
-
-  const extractCallsFromProviderResponse = (
-    response: Response
-  ): readonly ToolCall[] =>
-    (response as any).tool_calls?.map((call: any) => ({
-      name: call.name,
-      input: call.input,
-    })) || []
-
-  const combineProviderResponseWithResults = (
-    response: Response,
-    results: readonly ToolResult[]
-  ): Response => ({
-    ...(response as Record<string, unknown>),
-    tool_results: results.map(result => ({
-      content: result,
-    })),
-  })
-
-  return {
-    connect,
-    disconnect,
-    getTools,
-    formatToolsForProvider,
-    extractCallsFromProviderResponse,
-    executeToolCalls,
-    combineProviderResponseWithResults,
-  }
-}
-
-const createOpenAIService = (
-  config: McpIntegratorConfig
-): IntegratorService => {
-  const { transport, client, executeToolCalls } = createSharedComponents(config)
-
-  const connect = async () => {
-    await client.connect(transport)
-  }
-
-  const disconnect = async () => {
-    await client.close()
-  }
-
-  const getTools = async () => {
-    const result = await client.listTools()
-    return result.tools
-  }
-
-  const formatToolsForProvider = (
-    tools: readonly ToolFormat[]
-  ): readonly ToolFormat[] =>
-    tools.map(tool => ({
-      name: tool.name,
       type: 'function',
       function: {
         name: tool.name,
         description: tool.description,
-        parameters: tool.input_schema,
+        parameters: tool.inputSchema,
       },
     }))
 
-  const extractCallsFromProviderResponse = (
-    response: Response
-  ): readonly ToolCall[] =>
-    (response as any).tool_calls?.map((call: any) => ({
+  const extractToolCalls = (response: ProviderResponse<Provider.OpenAI>): readonly ToolCall[] =>
+    response.choices[0].message.tool_calls?.map(call => ({
+      id: call.id,
       name: call.function.name,
       input: JSON.parse(call.function.arguments),
-    })) || []
+    })) ?? []
 
-  const combineProviderResponseWithResults = (
-    response: Response,
+  const createToolResponseRequest = (
+    originalRequest: ProviderRequest<Provider.OpenAI>,
+    response: ProviderResponse<Provider.OpenAI>,
     results: readonly ToolResult[]
-  ): Response => ({
-    ...(response as Record<string, unknown>),
-    tool_calls: (response as any).tool_calls?.map((call: any, i: number) => ({
-      ...call,
-      function: {
-        ...call.function,
-        result: results[i],
-      },
-    })),
+  ): ProviderRequest<Provider.OpenAI> => ({
+    ...originalRequest,
+    messages: [
+      ...originalRequest.messages,
+      response.choices[0].message,
+      ...results.map(result => ({
+        role: 'tool',
+        tool_call_id: result.id,
+        content: String(result.content),
+      })),
+    ],
   })
 
   return {
-    connect,
-    disconnect,
-    getTools,
     formatToolsForProvider,
-    extractCallsFromProviderResponse,
-    executeToolCalls,
-    combineProviderResponseWithResults,
+    extractToolCalls,
+    createToolResponseRequest,
   }
 }
 
-const createAwsBedrockClaudeService = (
-  config: McpIntegratorConfig
-): IntegratorService => {
-  const { transport, client, executeToolCalls } = createSharedComponents(config)
-
-  const connect = async () => {
-    await client.connect(transport)
-  }
-
-  const disconnect = async () => {
-    await client.close()
-  }
-
-  const getTools = async () => {
-    const result = await client.listTools()
-    return result.tools
-  }
-
-  const formatToolsForProvider = (
-    tools: readonly ToolFormat[]
-  ): readonly ToolFormat[] =>
+const createClaudeService = (): LLMIntegrationService<Provider.Claude> => {
+  const formatToolsForProvider = (tools: readonly McpTool[]): readonly ToolFormat<Provider.Claude>[] =>
     tools.map(tool => ({
       name: tool.name,
       description: tool.description,
-      input_schema: tool.input_schema,
+      input_schema: tool.inputSchema,
     }))
 
-  const extractCallsFromProviderResponse = (
-    response: Response
-  ): readonly ToolCall[] =>
-    (response as any).tool_calls?.map((call: any) => ({
-      name: call.name,
-      input: call.input,
-    })) || []
+  const extractToolCalls = (response: ProviderResponse<Provider.Claude>): readonly ToolCall[] =>
+    response.content
+      .filter((block): block is ClaudeToolUseContent => block.type === 'tool_use')
+      .map(block => ({
+        id: block.id,
+        name: block.name,
+        input: block.input,
+      }))
 
-  const combineProviderResponseWithResults = (
-    response: Response,
+  const createToolResponseRequest = (
+    originalRequest: ProviderRequest<Provider.Claude>,
+    response: ProviderResponse<Provider.Claude>,
     results: readonly ToolResult[]
-  ): Response => ({
-    ...(response as Record<string, unknown>),
-    tool_results: results.map(result => ({
-      content: result,
-    })),
+  ): ProviderRequest<Provider.Claude> => ({
+    ...originalRequest,
+    messages: [
+      ...originalRequest.messages,
+      {
+        role: 'assistant',
+        content: response.content,
+      },
+      ...results.map(result => ({
+        role: 'user',
+        content: [{
+          type: 'tool_result' as const,
+          tool_use_id: result.id,
+          content: String(result.content),
+        }],
+      })),
+    ],
   })
 
   return {
-    connect,
-    disconnect,
-    getTools,
     formatToolsForProvider,
-    extractCallsFromProviderResponse,
-    executeToolCalls,
-    combineProviderResponseWithResults,
+    extractToolCalls,
+    createToolResponseRequest,
   }
 }
 
-export const create = (config: McpIntegratorConfig): IntegratorService => {
-  switch (config.provider) {
-    case Provider.Claude:
-      return createClaudeService(config)
+const createAwsBedrockClaudeService = (): LLMIntegrationService<Provider.AwsBedrockClaude> => {
+  const formatToolsForProvider = (tools: readonly McpTool[]): readonly ToolFormat<Provider.AwsBedrockClaude>[] =>
+    tools.map(tool => ({
+      type: 'custom',
+      name: tool.name,
+      description: tool.description ?? '',
+      input_schema: tool.inputSchema,
+    }))
+
+  const extractToolCalls = (response: ProviderResponse<Provider.AwsBedrockClaude>): readonly ToolCall[] =>
+    response.content
+      .filter((block): block is AwsBedrockClaudeToolUseContent => block.type === 'tool_use')
+      .map(block => ({
+        id: block.id,
+        name: block.name,
+        input: block.input,
+      }))
+
+  const createToolResponseRequest = (
+    originalRequest: ProviderRequest<Provider.AwsBedrockClaude>,
+    response: ProviderResponse<Provider.AwsBedrockClaude>,
+    results: readonly ToolResult[]
+  ): ProviderRequest<Provider.AwsBedrockClaude> => ({
+    ...originalRequest,
+    messages: [
+      ...originalRequest.messages,
+      {
+        role: 'assistant',
+        content: response.content,
+      },
+      ...results.map(result => ({
+        role: 'user',
+        content: [{
+          type: 'tool_result' as const,
+          tool_use_id: result.id,
+          content: String(result.content),
+        }],
+      })),
+    ],
+  })
+
+  return {
+    formatToolsForProvider,
+    extractToolCalls,
+    createToolResponseRequest,
+  }
+}
+
+
+const createIntegrationService = <P extends Provider>(provider: P): LLMIntegrationService<P> => {
+  switch (provider) {
     case Provider.OpenAI:
-      return createOpenAIService(config)
+      return createOpenAIService() as unknown as LLMIntegrationService<P>
+    case Provider.Claude:
+      return createClaudeService() as unknown as LLMIntegrationService<P>
     case Provider.AwsBedrockClaude:
-      return createAwsBedrockClaudeService(config)
+      return createAwsBedrockClaudeService() as unknown as LLMIntegrationService<P>
     default:
-      throw new Error(`Unknown provider: ${config.provider}`)
+      throw new Error(`Unknown provider: ${provider}`)
+  }
+}
+
+
+export const create = <P extends Provider>(config: McpIntegratorConfig & { provider: P }): McpIntegrator<P> => {
+  const { client, executeToolCalls, transport } = createSharedComponents(config)
+  const integrationService = createIntegrationService<P>(config.provider)
+
+  const getTools = async () => {
+    const result = await client.listTools()
+    return result.tools as readonly McpTool[]
+  }
+
+  const connect = async () => client.connect(transport)
+  const disconnect = async () => client.close()
+
+  return {
+    getTools,
+    executeToolCalls,
+    connect,
+    disconnect,
+    formatToolsForProvider: integrationService.formatToolsForProvider,
+    extractToolCalls: integrationService.extractToolCalls,
+    createToolResponseRequest: integrationService.createToolResponseRequest,
   }
 }

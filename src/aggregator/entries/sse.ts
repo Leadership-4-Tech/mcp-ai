@@ -7,11 +7,13 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import { InMemoryEventStore } from '@modelcontextprotocol/sdk/examples/shared/inMemoryEventStore.js'
 import { randomUUID } from 'crypto'
-import { create as createFeatures } from '../features/index.js'
-import { McpAggregatorConfig } from '../../common/types.js'
+import { create as createFeatures } from '../features.js'
+import { McpAggregatorConfig, McpAggregatorConfigWithSseServer, McpClientConfigs } from '../../common/types.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
+import { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import { z, ZodTypeAny } from 'zod'
 
-const create = async (config: McpAggregatorConfig) => {
+const create = async (config: McpAggregatorConfigWithSseServer) => {
   const features = await createFeatures(config)
   await features.initialize()
   const tools = await features.getTools()
@@ -23,27 +25,38 @@ const create = async (config: McpAggregatorConfig) => {
   const setupServer = async (port: number=3000) => {
     app.listen(port)
   }
-
  
   const tools2 = tools.map(tool => ({
-          name: tool.name,
-          description: tool.description || "",
-          parameters: tool.inputSchema
-        }))
-        console.log('Tools2', JSON.stringify(tools2, null, 2))
+    name: tool.name,
+    description: tool.description || "",
+    parameters: tool.inputSchema
+  }))
 
-    const server = new McpServer({
-      name: 'mcp-aggregator',
-      version: '1.0.0',
+  console.log('Tools2', JSON.stringify(tools2, null, 2))
+
+    const server = new McpServer(Object.assign({}, McpClientConfigs.aggregator, {
       capabilities: {
         tools: tools2,
       },
-    })
+    }))
     tools.forEach(tool => {
       console.log(tool)
-      server.tool(tool.name, tool.description || "", tool.inputSchema, async (extra) => {
+      const schema = {
+        type: 'object',
+        properties: Object.fromEntries(
+          Object.entries(tool.inputSchema.properties).map(([key, prop]) => [
+            key,
+            {
+              type: 'string',
+              description: prop.description || ''
+            }
+          ])
+        ),
+        required: tool.inputSchema.required || []
+      }
+      // @ts-ignore
+      server.tool(tool.name, tool.description || "", schema, async (extra) => {
         console.log('Received tool call:', tool.name, extra)
-        // Extract parameters from the request
         const results = await features.executeTool(tool.name, extra)
         console.log('Results:', results)
         return results as any
@@ -126,6 +139,8 @@ const create = async (config: McpAggregatorConfig) => {
       transport.close()
     })
   }
+
+  const client = new Client(McpClientConfigs.aggregator)
 
   return {
     start: setupServer,

@@ -51,7 +51,7 @@ const create = () => {
       tools: {
         hello: {
           description: 'Says hello to someone',
-          parameters: {
+          inputSchema: {
             type: 'object',
             properties: {
               name: {
@@ -64,7 +64,7 @@ const create = () => {
         },
         goodbye: {
           description: 'Says goodbye to someone',
-          parameters: {
+          inputSchema: {
             type: 'object',
             properties: {
               name: {

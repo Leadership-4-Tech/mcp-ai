@@ -1,7 +1,8 @@
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { McpAggregatorConfig, JsonAble } from '../../common/types.js'
-import { create as createServices } from '../services/index.js'
+import { McpAggregatorConfig, JsonAble, McpClientConfigs } from '../common/types.js'
+import { create as createServices } from './services.js'
+import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 
 export const create = async (config: McpAggregatorConfig) => {
   const services = createServices(config)
@@ -14,6 +15,7 @@ export const create = async (config: McpAggregatorConfig) => {
     tools,
   })
 
+  const client = new Client(McpClientConfigs.aggregator)
 
   const connect = async (transport: Transport) => {
     await server.connect(transport)

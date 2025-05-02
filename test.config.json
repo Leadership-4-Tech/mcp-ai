@@ -1,0 +1,22 @@
+{
+  "integrator": {
+    "connection": {
+      "type": "cli",
+      "path": "tsx",
+      "args": [
+        "/home/mcornwell/code/mcp-servers/src/filesystem/index.ts",
+        "/home/mcornwell/code/mcp-ai/src",
+        "/home/mcornwell/code/mcp-ai/docs"
+      ],
+      "env": {}
+    },
+    "connection1": {
+      "type": "cli-rpc",
+      "path": "string",
+      "args": [],
+      "env": {}
+    },
+    "provider": "openai",
+    "maxParallelCalls": 1
+  }
+}

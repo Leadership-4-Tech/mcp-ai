@@ -1,5 +1,5 @@
-import { create as createIntegrator } from './integrator/features/index.js'
-import { create as createAggregator } from './aggregator/features/index.js'
+import { create as createIntegrator } from './integrator/features.js'
+import { create as createAggregator } from './aggregator/features.js'
 import {
   McpIntegratorConfig,
   McpAggregatorConfig,

@@ -2,6 +2,15 @@
   "server": {
     "type": "http"
   },
+  "integrator": {
+    "connection": {
+      "type": "http",
+      "url": "http://localhost:3000",
+      "timeout": 5000
+    },
+    "provider": "openai",
+    "maxParallelCalls": 1
+  },
   "mcps": [
     {
       "id": "hello-world-http",

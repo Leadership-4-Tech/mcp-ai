@@ -12,29 +12,30 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 import {
   McpAggregatorConfig,
-  SimpleCliConnection,
-  RpcCliConnection,
+  CliConnection,
   HttpConnection,
   WsConnection,
-  ContainerPerRequestConnection,
-  PersistentContainerConnection,
   McpTool,
   ServerConfig,
-} from '../../common/types.js'
-import { JsonAble } from '../../common/types.js'
+  McpClientConfigs,
+  SseConnection,
+  Connection
+} from '../common/types.js'
+import { JsonAble } from '../common/types.js'
 import { spawn } from 'child_process'
 import axios from 'axios'
 import WebSocket from 'ws'
-import { createDockerTransport } from './docker.js'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { randomUUID } from 'crypto'
 import { asyncMap } from 'modern-async'
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
+import { createTransport } from '../common/libs.js'
 
 const createCliTransport = (
-  connection: Readonly<SimpleCliConnection>
+  connection: Readonly<CliConnection>
 ): Readonly<Transport> => {
   let messageCallback:
     | ((
@@ -157,7 +158,7 @@ const createCliTransport = (
 }
 
 const createCliPersistentTransport = (
-  connection: Readonly<RpcCliConnection>
+  connection: Readonly<CliConnection>
 ): Readonly<Transport> => {
   let process: ReturnType<typeof spawn> | null = null
   let messageCallback:
@@ -356,34 +357,6 @@ const createWsTransport = (
   }
 }
 
-const createTransport = (
-  connection: Readonly<
-    | SimpleCliConnection
-    | RpcCliConnection
-    | HttpConnection
-    | WsConnection
-    | ContainerPerRequestConnection
-    | PersistentContainerConnection
-  >
-): Readonly<Transport> => {
-  switch (connection.type) {
-    case 'cli':
-      return createCliTransport(connection)
-    case 'cli-rpc':
-      return createCliPersistentTransport(connection)
-    case 'http':
-      return createHttpTransport(connection)
-    case 'ws':
-      return createWsTransport(connection)
-    case 'docker':
-      return createDockerTransport(connection)
-    default:
-      throw new Error(
-        `Unsupported connection type: ${(connection as any).type}`
-      )
-  }
-}
-
 const createSimpleCliClient = (transport: Transport) => {
   let toolList: McpTool[] = []
 
@@ -439,25 +412,6 @@ const createSimpleCliClient = (transport: Transport) => {
       // Return the captured tool list
       return { tools: toolList }
     },
-  }
-}
-
-const createServerTransport = (config: ServerConfig): Transport => {
-  switch (config.type) {
-    case 'http': {
-      return new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-      })
-    }
-    case 'ws': {
-      throw new Error('WebSocket server transport not yet implemented')
-    }
-    case 'cli':
-    case 'cli-rpc': {
-      return new StdioServerTransport()
-    }
-    default:
-      throw new Error(`Unsupported server type: ${config.type}`)
   }
 }
 
@@ -541,10 +495,7 @@ const create = (config: Readonly<McpAggregatorConfig>) => {
           await client.connect()
           clients.set(mcp.id, client)
         } else {
-          const client = new Client({
-            name: 'mcp-aggregator',
-            version: '0.0.1',
-          })
+          const client = new Client(McpClientConfigs.aggregator)
           client.onerror = error => {
             console.error(`Error in MCP ${mcp.id}:`, error)
           }
