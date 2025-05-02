@@ -10,7 +10,7 @@ MCP servers are a pretty sweet idea, but having the ability to integrate them al
 ## Installation
 
 ```bash
-npm install mcp-ai
+npm install @l4t/mcp-ai
 ```
 
 ## Running Aggregator
@@ -18,7 +18,7 @@ npm install mcp-ai
 If you install this library globally it will add the `mcp-aggregator.mts` script to be used for starting up aggregators in any context.
 
 ```bash
-npm i -g mcp-ai
+npm i -g @l4t/mcp-ai
 ```
 
 NOTE: You must have tsx installed for it to run.
