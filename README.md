@@ -18,7 +18,7 @@ npm install @l4t/mcp-ai
 If you install this library globally it will add the `mcp-aggregator.mts` script to be used for starting up aggregators in any context.
 
 ```bash
-npm i -g @l4t/mcp-ai
+npm i -g @l4t/mcp-ai argparse
 ```
 
 Once you have it installed you can:

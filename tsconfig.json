@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "lib": ["ES2023", "ESNext.Array", "es2021", "dom", "es2015"],
-    "module": "NodeNext",
-    "moduleResolution": "nodenext",
+    "target": "es2021",
+    "lib": ["es2021", "dom", "es2015"],
+    "module": "esnext",
+    "moduleResolution": "node",
     "rootDir": "./src",
     "allowJs": true,
     "declaration": true,
