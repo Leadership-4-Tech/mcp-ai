@@ -21,7 +21,13 @@ If you install this library globally it will add the `mcp-aggregator.mts` script
 npm i -g @l4t/mcp-ai
 ```
 
-NOTE: You must have tsx installed for it to run.
+Once you have it installed you can:
+
+```bash
+mcp-aggregator.js ./path-to-your-config.json
+```
+
+This is very useful for running this as a server process, in something like a docker container.
 
 ## Overview
 

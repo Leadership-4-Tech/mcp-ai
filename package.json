@@ -1,6 +1,6 @@
 {
   "name": "@l4t/mcp-ai",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A node based MCP service aggregator and integrator to create an expansive set of tools and functions for AI usage.",
   "keywords": [
     "AI",
@@ -25,7 +25,7 @@
     }
   },
   "scripts": {
-    "build": "rm -Rf ./dist && tsc -p ./tsconfig.json && cp package.json ./dist && cp README.md ./dist",
+    "build": "./bin/build.sh",
     "build:watch": "nodemon -e '*' --watch ./src --exec \"npm run build || exit 1\"",
     "commit": "cz",
     "dist": "npm run build && cd dist && npm publish",

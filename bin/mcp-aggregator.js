@@ -1,4 +1,4 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env node
 
 import { ArgumentParser } from 'argparse'
 import { readFileSync } from 'fs'
