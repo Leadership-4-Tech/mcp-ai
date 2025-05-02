@@ -1,0 +1,39 @@
+{
+  "integrator": {
+    "connection": {
+      "type": "http",
+      "url": "http://localhost:3000"
+    },
+    "provider": "openai",
+    "model": "gpt-4o",
+    "modelId": "",
+    "maxParallelCalls": 1
+  },
+  "aggregator": {
+    "server": {
+      "connection": {
+        "type": "http",
+        "port": "3000"
+      },
+      "maxParallelCalls": 10
+    },
+    "mcps": [
+      {
+        "id": "filesystem",
+        "connection": {
+          "type": "cli",
+          "path": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-memory"]
+        }
+      },
+      {
+        "id": "memory",
+        "connection": {
+          "type": "cli",
+          "path": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+        }
+      }
+    ]
+  }
+}

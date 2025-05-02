@@ -1,9 +1,10 @@
-import { 
+import {
   McpAggregatorConfig,
   McpAggregatorConfigWithCliServer,
   McpAggregatorConfigWithSseServer,
-  McpAggregatorConfigWithHttpServer
+  McpAggregatorConfigWithHttpServer,
 } from '../../common/types.js'
+
 import { create as createCli } from './cli.js'
 import { create as createSse } from './sse.js'
 import { create as createHttp } from './http.js'
@@ -17,8 +18,10 @@ const create = (config: McpAggregatorConfig) => {
     case 'http':
       return createHttp(config as McpAggregatorConfigWithHttpServer)
     default:
-      throw new Error(`Unsupported server type: ${config.server.connection.type}`)
+      throw new Error(
+        `Unsupported server type: ${config.server.connection.type}`
+      )
   }
 }
 
-export { create } 
+export { create }

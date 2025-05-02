@@ -1,6 +1,9 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index.js'
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
-import { McpIntegratorConfig, Provider, McpTool, OpenAPISchema } from '../common/types.js'
+import {
+  McpIntegratorConfig,
+  Provider,
+  McpTool,
+  OpenAPISchema,
+} from '../common/types.js'
 
 export type OpenAIToolFormat = Readonly<{
   type: 'function'
@@ -18,7 +21,6 @@ export type ClaudeToolFormat = Readonly<{
 }>
 
 export type AwsBedrockClaudeToolFormat = Readonly<{
-  type: 'custom'
   name: string
   description: string
   input_schema: OpenAPISchema
@@ -27,10 +29,10 @@ export type AwsBedrockClaudeToolFormat = Readonly<{
 export type ToolFormat<P extends Provider> = P extends Provider.OpenAI
   ? OpenAIToolFormat
   : P extends Provider.Claude
-  ? ClaudeToolFormat
-  : P extends Provider.AwsBedrockClaude
-  ? AwsBedrockClaudeToolFormat
-  : never
+    ? ClaudeToolFormat
+    : P extends Provider.AwsBedrockClaude
+      ? AwsBedrockClaudeToolFormat
+      : never
 
 export type OpenAIToolCall = Readonly<{
   id: string
@@ -52,11 +54,13 @@ export type OpenAIResponse = Readonly<{
   object: 'chat.completion'
   created: number
   model: string
-  choices: Readonly<Array<{
-    index: number
-    message: OpenAIMessage
-    finish_reason: 'stop' | 'tool_calls'
-  }>>
+  choices: Readonly<
+    Array<{
+      index: number
+      message: OpenAIMessage
+      finish_reason: 'stop' | 'tool_calls'
+    }>
+  >
   usage: Readonly<{
     prompt_tokens: number
     completion_tokens: number
@@ -83,7 +87,10 @@ export type ClaudeToolResultContent = Readonly<{
   content: string
 }>
 
-export type ClaudeContentBlock = ClaudeTextContent | ClaudeToolUseContent | ClaudeToolResultContent
+export type ClaudeContentBlock =
+  | ClaudeTextContent
+  | ClaudeToolUseContent
+  | ClaudeToolResultContent
 
 export type ClaudeMessage = Readonly<{
   role: string
@@ -121,9 +128,9 @@ export type AwsBedrockClaudeToolResultContent = Readonly<{
   content: string
 }>
 
-export type AwsBedrockClaudeContentBlock = 
-  | AwsBedrockClaudeTextContent 
-  | AwsBedrockClaudeToolUseContent 
+export type AwsBedrockClaudeContentBlock =
+  | AwsBedrockClaudeTextContent
+  | AwsBedrockClaudeToolUseContent
   | AwsBedrockClaudeToolResultContent
 
 export type AwsBedrockClaudeMessage = Readonly<{
@@ -148,10 +155,10 @@ export type AwsBedrockClaudeResponse = Readonly<{
 export type ProviderResponse<P extends Provider> = P extends Provider.OpenAI
   ? OpenAIResponse
   : P extends Provider.Claude
-  ? ClaudeResponse
-  : P extends Provider.AwsBedrockClaude
-  ? AwsBedrockClaudeResponse
-  : never
+    ? ClaudeResponse
+    : P extends Provider.AwsBedrockClaude
+      ? AwsBedrockClaudeResponse
+      : never
 
 export type ToolCall = Readonly<{
   id: string
@@ -196,25 +203,27 @@ export type AwsBedrockClaudeRequest = Readonly<{
 export type ProviderRequest<P extends Provider> = P extends Provider.OpenAI
   ? OpenAIRequest
   : P extends Provider.Claude
-  ? ClaudeRequest
-  : P extends Provider.AwsBedrockClaude
-  ? AwsBedrockClaudeRequest
-  : never
+    ? ClaudeRequest
+    : P extends Provider.AwsBedrockClaude
+      ? AwsBedrockClaudeRequest
+      : never
 
 /**
  * The service that handles the integration with the LLM provider.
  * This only handles the integration with the LLM provider, not the MCP.
  */
 export type LLMIntegrationService<P extends Provider> = Readonly<{
-  formatToolsForProvider: (tools: readonly McpTool[]) => readonly ToolFormat<P>[]
+  formatToolsForProvider: (
+    tools: readonly McpTool[]
+  ) => readonly ToolFormat<P>[]
   extractToolCalls: (response: ProviderResponse<P>) => readonly ToolCall[]
   /**
    * Creates a full response request to the LLM provider, using the original request, the LLM's call to tools, and the results of the tool calls.
    * It is important to note that the LLM provider may return regular messages in the response, and tool calls.
-   * @param originalRequest 
-   * @param response 
-   * @param results 
-   * @returns 
+   * @param originalRequest
+   * @param response
+   * @param results
+   * @returns
    */
   createToolResponseRequest: (
     originalRequest: ProviderRequest<P>,
@@ -238,7 +247,7 @@ export type CreateLLMIntegrationService = <P extends Provider>(
 export type McpIntegrator<P extends Provider> = Readonly<{
   /**
    * Starts connections to the MCP
-   * @returns 
+   * @returns
    */
   connect: () => Promise<void>
   /**
@@ -256,7 +265,9 @@ export type McpIntegrator<P extends Provider> = Readonly<{
    * @param tools - The tools to format
    * @returns
    */
-  formatToolsForProvider: (tools: readonly McpTool[]) => readonly ToolFormat<P>[]
+  formatToolsForProvider: (
+    tools: readonly McpTool[]
+  ) => readonly ToolFormat<P>[]
   /**
    * Extracts the tool calls from the provider response and formats them as a ToolCall for MCP format.
    * @param response - The response from the provider
@@ -268,7 +279,9 @@ export type McpIntegrator<P extends Provider> = Readonly<{
    * @param calls - The tool calls to execute
    * @returns
    */
-  executeToolCalls: (calls: readonly ToolCall[]) => Promise<readonly ToolResult[]>
+  executeToolCalls: (
+    calls: readonly ToolCall[]
+  ) => Promise<readonly ToolResult[]>
   /**
    * Creates a new request to the LLM provider, using the original request, the LLM's call to tools, and the results of the tool calls.
    * @param originalRequest - The original request to the LLM provider

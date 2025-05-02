@@ -1,6 +1,6 @@
-import { McpTool, Provider } from '../common/types.js'
+import { McpTool, Provider, McpIntegratorConfig } from '../common/types.js'
+
 import { create as createServices } from './services.js'
-import { McpIntegratorConfig } from '../common/types.js'
 import {
   McpIntegrator,
   ToolFormat,
@@ -12,14 +12,17 @@ import {
 
 const listToolsTool = {
   name: 'mcp-integrator-list-tools',
-  description: 'List all the tools you have access to. Or better yet the user does.',
+  description:
+    'List all the tools you have access to. Or better yet the user does.',
   inputSchema: {
     type: 'object' as const,
     properties: {},
   },
 }
 
-const create = <P extends Provider>(config: McpIntegratorConfig & { provider: P }): McpIntegrator<P> => {
+const create = <P extends Provider>(
+  config: McpIntegratorConfig & { provider: P }
+): McpIntegrator<P> => {
   const services = createServices(config)
 
   const connect = async () => {
@@ -32,14 +35,20 @@ const create = <P extends Provider>(config: McpIntegratorConfig & { provider: P 
 
   const getTools = async (): Promise<readonly McpTool[]> => {
     const tools = await services.getTools()
-    return config.includeListToolsTool !== false ? [listToolsTool].concat(tools) : tools
+    return config.includeListToolsTool !== false
+      ? [listToolsTool].concat(tools)
+      : tools
   }
 
-  const formatToolsForProvider = (tools: readonly McpTool[]): readonly ToolFormat<P>[] => {
+  const formatToolsForProvider = (
+    tools: readonly McpTool[]
+  ): readonly ToolFormat<P>[] => {
     return services.formatToolsForProvider(tools)
   }
 
-  const extractToolCalls = (response: ProviderResponse<P>): readonly ToolCall[] => {
+  const extractToolCalls = (
+    response: ProviderResponse<P>
+  ): readonly ToolCall[] => {
     return services.extractToolCalls(response)
   }
 
@@ -49,12 +58,14 @@ const create = <P extends Provider>(config: McpIntegratorConfig & { provider: P 
     const metatoolCall = calls.find(x => x.name === 'mcp-integrator-list-tools')
     if (metatoolCall) {
       const tools = await services.getTools()
-      return [{
-        id: metatoolCall.id,
-        content: JSON.stringify(tools.map(x => x.name))
-      }]
+      return [
+        {
+          id: metatoolCall.id,
+          content: JSON.stringify(tools.map(x => x.name)),
+        },
+      ]
     }
-    return await services.executeToolCalls(calls)
+    return services.executeToolCalls(calls)
   }
 
   const createToolResponseRequest = (

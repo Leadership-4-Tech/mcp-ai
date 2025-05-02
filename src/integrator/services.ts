@@ -1,4 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import { asyncMap } from 'modern-async'
+
 import {
   McpIntegratorConfig,
   Provider,
@@ -6,6 +8,7 @@ import {
   McpTool,
 } from '../common/types.js'
 import { createTransport } from '../common/libs.js'
+
 import {
   LLMIntegrationService,
   ToolFormat,
@@ -17,35 +20,44 @@ import {
   ClaudeToolUseContent,
   AwsBedrockClaudeToolUseContent,
 } from './types.js'
-import { asyncMap } from 'modern-async'
+
+const DEFAULT_MAX_PARALLEL_CALLS = 10
 
 const createExecuteToolCalls =
-  (client: Client) =>
+  (client: Client, maxParallelCalls: number = DEFAULT_MAX_PARALLEL_CALLS) =>
   async (calls: readonly ToolCall[]): Promise<readonly ToolResult[]> =>
-    asyncMap(calls, async call => {
-      const result = await client.callTool({
-        id: call.id,
-        name: call.name,
-        // @ts-ignore I have absolutely seen the requirement to have this.
-        arguments: call.input,
-        input: call.input,
-      })
-      return {
-        id: call.id,
-        content: result.content
-      }
-    }, 10)
+    asyncMap(
+      calls,
+      async call => {
+        const result = await client.callTool({
+          id: call.id,
+          name: call.name,
+          // @ts-ignore I have absolutely seen the requirement to have this.
+          arguments: call.input,
+          input: call.input,
+        })
+        return {
+          id: call.id,
+          content: result.content,
+        }
+      },
+      maxParallelCalls
+    )
 
 const createSharedComponents = (config: McpIntegratorConfig) => {
   const transport = createTransport(config.connection)
   const client = new Client(McpClientConfigs.integrator)
-  const executeToolCalls = createExecuteToolCalls(client)
+  const executeToolCalls = createExecuteToolCalls(
+    client,
+    config.maxParallelCalls || DEFAULT_MAX_PARALLEL_CALLS
+  )
   return { transport, client, executeToolCalls }
 }
 
-
 const createOpenAIService = (): LLMIntegrationService<Provider.OpenAI> => {
-  const formatToolsForProvider = (tools: readonly McpTool[]): readonly ToolFormat<Provider.OpenAI>[] =>
+  const formatToolsForProvider = (
+    tools: readonly McpTool[]
+  ): readonly ToolFormat<Provider.OpenAI>[] =>
     tools.map(tool => ({
       type: 'function',
       function: {
@@ -55,7 +67,9 @@ const createOpenAIService = (): LLMIntegrationService<Provider.OpenAI> => {
       },
     }))
 
-  const extractToolCalls = (response: ProviderResponse<Provider.OpenAI>): readonly ToolCall[] =>
+  const extractToolCalls = (
+    response: ProviderResponse<Provider.OpenAI>
+  ): readonly ToolCall[] =>
     response.choices[0].message.tool_calls?.map(call => ({
       id: call.id,
       name: call.function.name,
@@ -74,7 +88,12 @@ const createOpenAIService = (): LLMIntegrationService<Provider.OpenAI> => {
       ...results.map(result => ({
         role: 'tool',
         tool_call_id: result.id,
-        content: String(result.content),
+        content:
+          typeof result.content === 'object'
+            ? JSON.stringify(result.content)
+            : typeof result.content === 'string'
+              ? result.content
+              : String(result.content),
       })),
     ],
   })
@@ -87,16 +106,22 @@ const createOpenAIService = (): LLMIntegrationService<Provider.OpenAI> => {
 }
 
 const createClaudeService = (): LLMIntegrationService<Provider.Claude> => {
-  const formatToolsForProvider = (tools: readonly McpTool[]): readonly ToolFormat<Provider.Claude>[] =>
+  const formatToolsForProvider = (
+    tools: readonly McpTool[]
+  ): readonly ToolFormat<Provider.Claude>[] =>
     tools.map(tool => ({
       name: tool.name,
       description: tool.description,
       input_schema: tool.inputSchema,
     }))
 
-  const extractToolCalls = (response: ProviderResponse<Provider.Claude>): readonly ToolCall[] =>
+  const extractToolCalls = (
+    response: ProviderResponse<Provider.Claude>
+  ): readonly ToolCall[] =>
     response.content
-      .filter((block): block is ClaudeToolUseContent => block.type === 'tool_use')
+      .filter(
+        (block): block is ClaudeToolUseContent => block.type === 'tool_use'
+      )
       .map(block => ({
         id: block.id,
         name: block.name,
@@ -117,11 +142,18 @@ const createClaudeService = (): LLMIntegrationService<Provider.Claude> => {
       },
       ...results.map(result => ({
         role: 'user',
-        content: [{
-          type: 'tool_result' as const,
-          tool_use_id: result.id,
-          content: String(result.content),
-        }],
+        content: [
+          {
+            type: 'tool_result' as const,
+            tool_use_id: result.id,
+            content:
+              typeof result.content === 'object'
+                ? JSON.stringify(result.content)
+                : typeof result.content === 'string'
+                  ? result.content
+                  : String(result.content),
+          },
+        ],
       })),
     ],
   })
@@ -133,56 +165,71 @@ const createClaudeService = (): LLMIntegrationService<Provider.Claude> => {
   }
 }
 
-const createAwsBedrockClaudeService = (): LLMIntegrationService<Provider.AwsBedrockClaude> => {
-  const formatToolsForProvider = (tools: readonly McpTool[]): readonly ToolFormat<Provider.AwsBedrockClaude>[] =>
-    tools.map(tool => ({
-      type: 'custom',
-      name: tool.name,
-      description: tool.description ?? '',
-      input_schema: tool.inputSchema,
-    }))
-
-  const extractToolCalls = (response: ProviderResponse<Provider.AwsBedrockClaude>): readonly ToolCall[] =>
-    response.content
-      .filter((block): block is AwsBedrockClaudeToolUseContent => block.type === 'tool_use')
-      .map(block => ({
-        id: block.id,
-        name: block.name,
-        input: block.input,
+const createAwsBedrockClaudeService =
+  (): LLMIntegrationService<Provider.AwsBedrockClaude> => {
+    const formatToolsForProvider = (
+      tools: readonly McpTool[]
+    ): readonly ToolFormat<Provider.AwsBedrockClaude>[] =>
+      tools.map(tool => ({
+        name: tool.name,
+        description: tool.description ?? '',
+        input_schema: tool.inputSchema,
       }))
 
-  const createToolResponseRequest = (
-    originalRequest: ProviderRequest<Provider.AwsBedrockClaude>,
-    response: ProviderResponse<Provider.AwsBedrockClaude>,
-    results: readonly ToolResult[]
-  ): ProviderRequest<Provider.AwsBedrockClaude> => ({
-    ...originalRequest,
-    messages: [
-      ...originalRequest.messages,
-      {
-        role: 'assistant',
-        content: response.content,
-      },
-      ...results.map(result => ({
-        role: 'user',
-        content: [{
-          type: 'tool_result' as const,
-          tool_use_id: result.id,
-          content: String(result.content),
-        }],
-      })),
-    ],
-  })
+    const extractToolCalls = (
+      response: ProviderResponse<Provider.AwsBedrockClaude>
+    ): readonly ToolCall[] =>
+      response.content
+        .filter(
+          (block): block is AwsBedrockClaudeToolUseContent =>
+            block.type === 'tool_use'
+        )
+        .map(block => ({
+          id: block.id,
+          name: block.name,
+          input: block.input,
+        }))
 
-  return {
-    formatToolsForProvider,
-    extractToolCalls,
-    createToolResponseRequest,
+    const createToolResponseRequest = (
+      originalRequest: ProviderRequest<Provider.AwsBedrockClaude>,
+      response: ProviderResponse<Provider.AwsBedrockClaude>,
+      results: readonly ToolResult[]
+    ): ProviderRequest<Provider.AwsBedrockClaude> => ({
+      ...originalRequest,
+      messages: [
+        ...originalRequest.messages,
+        {
+          role: 'assistant',
+          content: response.content,
+        },
+        ...results.map(result => ({
+          role: 'user',
+          content: [
+            {
+              type: 'tool_result' as const,
+              tool_use_id: result.id,
+              content:
+                typeof result.content === 'object'
+                  ? JSON.stringify(result.content)
+                  : typeof result.content === 'string'
+                    ? result.content
+                    : String(result.content),
+            },
+          ],
+        })),
+      ],
+    })
+
+    return {
+      formatToolsForProvider,
+      extractToolCalls,
+      createToolResponseRequest,
+    }
   }
-}
 
-
-const createIntegrationService = <P extends Provider>(provider: P): LLMIntegrationService<P> => {
+const createIntegrationService = <P extends Provider>(
+  provider: P
+): LLMIntegrationService<P> => {
   switch (provider) {
     case Provider.OpenAI:
       return createOpenAIService() as unknown as LLMIntegrationService<P>
@@ -195,8 +242,9 @@ const createIntegrationService = <P extends Provider>(provider: P): LLMIntegrati
   }
 }
 
-
-export const create = <P extends Provider>(config: McpIntegratorConfig & { provider: P }): McpIntegrator<P> => {
+export const create = <P extends Provider>(
+  config: McpIntegratorConfig & { provider: P }
+): McpIntegrator<P> => {
   const { client, executeToolCalls, transport } = createSharedComponents(config)
   const integrationService = createIntegrationService<P>(config.provider)
 
@@ -205,7 +253,12 @@ export const create = <P extends Provider>(config: McpIntegratorConfig & { provi
     return result.tools as readonly McpTool[]
   }
 
-  const connect = async () => client.connect(transport)
+  const connect = async () => {
+    await client.connect(transport).catch(e => {
+      console.error(e)
+      throw e
+    })
+  }
   const disconnect = async () => client.close()
 
   return {

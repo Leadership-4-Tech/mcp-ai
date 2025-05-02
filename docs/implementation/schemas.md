@@ -1,6 +1,7 @@
 # LLM API Schemas: Claude, AWS Bedrock Claude, and OpenAI
 
 This document provides a comprehensive comparison of the request and response schemas for:
+
 1. Claude API (Direct)
 2. Claude on AWS Bedrock
 3. OpenAI API
@@ -588,18 +589,21 @@ This document provides a comprehensive comparison of the request and response sc
 ### Claude vs. OpenAI
 
 1. **Request Structure**:
+
    - Claude uses a unified `tools` array with an `input_schema` for each tool
    - OpenAI uses `tools` with nested `function` objects containing `parameters`
    - Claude (direct) has `content` that can be a string or array of content blocks
    - OpenAI has the `role` field at the message level, not the content level
 
 2. **Response Structure**:
+
    - Claude returns tool calls as `content` with `type: "tool_use"`
    - OpenAI returns tool calls in the `tool_calls` array
    - Claude uses `stop_reason: "tool_use"` to indicate a tool call
    - OpenAI uses `finish_reason: "tool_calls"` to indicate a tool call
 
 3. **Tool Results**:
+
    - Claude takes tool results as `type: "tool_result"` in a user message's content array
    - OpenAI takes tool results with a distinct `"role": "tool"` message type
 
@@ -610,6 +614,7 @@ This document provides a comprehensive comparison of the request and response sc
 ### Claude Direct vs. Claude on AWS Bedrock
 
 1. **Request Structure**:
+
    - Bedrock requires `anthropic_version: "bedrock-2023-05-31"`
    - Bedrock requires `type: "custom"` in tool definitions
    - Direct Claude doesn't need these extra fields

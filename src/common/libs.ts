@@ -2,10 +2,11 @@ import {
   StreamableHTTPClientTransport,
   StreamableHTTPClientTransportOptions,
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
-import { Connection } from './types.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { WebSocketClientTransport } from '@modelcontextprotocol/sdk/client/websocket.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
+
+import { Connection } from './types.js'
 
 export const toMcpConfig = (
   connection: Connection
@@ -49,6 +50,7 @@ export const createTransport = (connection: Connection) => {
   if (connection.type === 'sse') {
     return new SSEClientTransport(new URL(connection.url))
   }
-  throw new Error(`Unsupported connection type: ${(connection as { type: string }).type}`)
+  throw new Error(
+    `Unsupported connection type: ${(connection as { type: string }).type}`
+  )
 }
-

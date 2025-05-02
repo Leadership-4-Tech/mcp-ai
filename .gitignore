@@ -29,3 +29,5 @@ reports/
 tmp/
 .odoo.env
 .cursor/
+.config.json
+.config*.json

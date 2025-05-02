@@ -59,7 +59,7 @@ export default [
         ...globals.mocha,
       },
       ecmaVersion: 2020,
-      sourceType: 'commonjs',
+      sourceType: 'module',
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
@@ -74,11 +74,13 @@ export default [
       },
       'import/ignore': ['node_modules'],
       'import/resolver': {
-        typescript: true,
-
-        moduleDirectory: ['node_modules', 'src/'],
         node: {
-          extensions: ['.ts', '.tsx'],
+          extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.mjs'],
+          moduleDirectory: ['node_modules', 'src'],
+        },
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
         },
       },
     },

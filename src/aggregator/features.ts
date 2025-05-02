@@ -1,35 +1,29 @@
-import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
-import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { McpAggregatorConfig, JsonAble, McpClientConfigs } from '../common/types.js'
+import type { McpAggregatorConfig } from '../common/types.js'
+
 import { create as createServices } from './services.js'
 
-export const create = async (config: McpAggregatorConfig) => {
-  let services: any
-
-  const connect = async () => {
-    services = createServices(config)
-    await services.connect()
-  }
-
-  const disconnect = async () => {
-    await services.disconnect()
-  }
-
-  const getTools = async () => {
-    return services.getTools()
-  }
-
-  const executeTool = async (
-    name: string,
-    input: Readonly<Record<string, JsonAble>>
-  ) => {
-    return services.executeTool(name, input)
-  }
+const create = (config: McpAggregatorConfig) => {
+  // eslint-disable-next-line functional/no-let
+  let services: ReturnType<typeof createServices> | undefined
 
   return {
-    getTools,
-    executeTool,
-    connect,
-    disconnect,
+    connect: async () => {
+      services = createServices(config)
+      await services.connect()
+    },
+    getTools: async () => {
+      if (!services) {
+        throw new Error('Services not initialized')
+      }
+      return services.getTools()
+    },
+    executeTool: async (toolName: string, params: any) => {
+      if (!services) {
+        throw new Error('Services not initialized')
+      }
+      return services.executeTool(toolName, params)
+    },
   }
 }
+
+export { create }

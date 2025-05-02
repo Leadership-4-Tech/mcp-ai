@@ -1,0 +1,39 @@
+{
+  "integrator": {
+    "connection": {
+      "type": "cli",
+      "path": "tsx",
+      "args": ["./bin/cliServer.mts", "./this-config-but-yours.json"]
+    },
+    "provider": "openai",
+    "model": "gpt-4o",
+    "modelId": "",
+    "maxParallelCalls": 1
+  },
+  "aggregator": {
+    "server": {
+      "connection": {
+        "type": "cli"
+      },
+      "maxParallelCalls": 10
+    },
+    "mcps": [
+      {
+        "id": "filesystem",
+        "connection": {
+          "type": "cli",
+          "path": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-memory"]
+        }
+      },
+      {
+        "id": "memory",
+        "connection": {
+          "type": "cli",
+          "path": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+        }
+      }
+    ]
+  }
+}
