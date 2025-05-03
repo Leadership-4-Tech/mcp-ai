@@ -18,9 +18,6 @@ echo "Copying mcp-aggregator.mts..."
 cp ./bin/mcp-aggregator.mts ./dist/bin/mcp-aggregator.js
 
 echo "Running sed commands..."
-echo "Before sed:"
-cat ./dist/bin/mcp-aggregator.js
-
 # Fix the shebang
 sed -i '1c\#!/usr/bin/env node' ./dist/bin/mcp-aggregator.js
 # Fix the import paths

@@ -6,6 +6,7 @@ import {
   McpClientConfigs,
 } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
+import { openApiToZodSchema } from '../../common/libs.js'
 
 const create = (config: McpAggregatorConfigWithCliServer) => {
   // eslint-disable-next-line functional/no-let
@@ -30,7 +31,7 @@ const create = (config: McpAggregatorConfigWithCliServer) => {
       server.tool(
         tool.name,
         tool.description || '',
-        tool.parameters,
+        openApiToZodSchema(tool.parameters),
         async extra => {
           const results = await features.executeTool(tool.name, extra)
           return results as any

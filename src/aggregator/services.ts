@@ -12,6 +12,8 @@ const DEFAULT_MAX_PARALLEL_CALLS = 10
 const create = (config: McpAggregatorConfig) => {
   // eslint-disable-next-line functional/no-let
   let clients: Record<string, Client> = {}
+  // eslint-disable-next-line functional/no-let
+  let toolToClient: Record<string, Client> = {}
 
   const createClient = async (connection: Connection) => {
     const transport = createTransport(connection)
@@ -30,26 +32,26 @@ const create = (config: McpAggregatorConfig) => {
       ).then(Object.fromEntries)
     },
     getTools: async () => {
+      toolToClient = {}
       const allTools = await asyncMap(
         Object.values(clients),
-        client => {
-          return client.listTools().then(x => x.tools)
+        async client => {
+          const tools = await client.listTools().then(x => x.tools)
+          tools.forEach(tool => {
+            // eslint-disable-next-line functional/immutable-data
+            toolToClient[tool.name] = client
+          })
+          return tools
         },
         config.maxParallelCalls || DEFAULT_MAX_PARALLEL_CALLS
       )
       return allTools.flat()
     },
     executeTool: async (toolName: string, params: any) => {
-      const results = await asyncMap(
-        Object.values(clients),
-        client => {
-          return client
-            .callTool({ name: toolName, input: params })
-            .catch(() => [])
-        },
-        config.maxParallelCalls || DEFAULT_MAX_PARALLEL_CALLS
-      )
-      return results.flat()
+      const client = toolToClient[toolName]
+      return client
+        .callTool({ name: toolName, arguments: params })
+        .catch(() => [])
     },
   }
 }

@@ -1,3 +1,4 @@
+import { z, ZodType } from 'zod'
 import {
   StreamableHTTPClientTransport,
   StreamableHTTPClientTransportOptions,
@@ -54,3 +55,42 @@ export const createTransport = (connection: Connection) => {
     `Unsupported connection type: ${(connection as { type: string }).type}`
   )
 }
+
+export const openApiToZodSchema = (parameters: any): Record<string, ZodType> => {
+  const { properties, required } = parameters
+  
+  if (!properties) {
+    return {}
+  }
+  
+  return Object.entries(properties).reduce((acc, [key, propDef]: [string, any]) => {
+    // Create the Zod field and apply optional if needed
+    const zodField = createZodTypeFromDefinition(propDef)
+    const finalField = !required?.includes(key) ? zodField.optional() : zodField
+    
+    // Return new accumulated object with this field
+    return { ...acc, [key]: finalField }
+  }, {})
+}
+
+// Single function to handle all types of definitions
+const createZodTypeFromDefinition = (def: any): ZodType => {
+  const { type, items } = def
+  
+  switch (type) {
+    case 'string':
+      return z.string()
+    case 'number':
+    case 'integer':
+      return z.number()
+    case 'boolean':
+      return z.boolean()
+    case 'array':
+      return z.array(items ? createZodTypeFromDefinition(items) : z.any())
+    case 'object':
+      return z.object(openApiToZodSchema(def))
+    default:
+      return z.any()
+  }
+}
+

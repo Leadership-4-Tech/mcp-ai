@@ -10,6 +10,7 @@ import {
   McpClientConfigs,
 } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
+import { openApiToZodSchema } from '../../common/libs.js'
 
 const DEFAULT_PORT = 3000
 const BAD_REQUEST_STATUS = 400
@@ -42,7 +43,7 @@ const create = (config: McpAggregatorConfigWithHttpServer) => {
       server.tool(
         tool.name,
         tool.description || '',
-        tool.parameters,
+        openApiToZodSchema(tool.parameters),
         async extra => {
           const results = await features.executeTool(tool.name, extra)
           return results as any

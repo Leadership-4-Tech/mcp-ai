@@ -8,6 +8,10 @@ async function main() {
   try {
     const { values, positionals } = parseArgs({
       options: {
+        cursor: {
+          type: 'boolean',
+          short: 'c',
+        },
         help: {
           type: 'boolean',
           short: 'h',
@@ -27,6 +31,7 @@ Usage: mcp-aggregator [options] <config-file>
 Launches an MCP Aggregator server according to the configuration passed in.
 
 Options:
+  -c, --cursor   Sets the mode for cursor support
   -h, --help     Show this help message
   -v, --version  Show version information
 
@@ -53,9 +58,12 @@ Arguments:
 
     // Extract aggregator config - use the whole config if no aggregator property
     const config = fullConfig.aggregator ? fullConfig.aggregator : fullConfig
+    const finalConfig = Object.assign(config, {
+      cursor: values.cursor,
+    })
 
     // Create and start the server
-    const server = create(config)
+    const server = create(finalConfig)
 
     // Handle process termination
     process.on('SIGINT', async () => {

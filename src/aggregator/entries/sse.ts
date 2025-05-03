@@ -10,6 +10,7 @@ import {
   McpClientConfigs,
 } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
+import { openApiToZodSchema } from '../../common/libs.js'
 
 const HTTP_ERROR = 500
 const BAD_REQUEST = 400
@@ -92,16 +93,12 @@ const create = (config: McpAggregatorConfigWithSseServer) => {
     )
 
     tools.forEach(tool => {
+      const schema = openApiToZodSchema(tool.parameters)
       // @ts-ignore
-      server.tool(
-        tool.name,
-        tool.description || '',
-        tool.parameters,
-        async extra => {
-          const results = await features.executeTool(tool.name, extra)
-          return results as any
-        }
-      )
+      server.tool(tool.name, tool.description || '', schema, async extra => {
+        const results = await features.executeTool(tool.name, extra)
+        return results as any
+      })
     })
   }
 
