@@ -1,6 +1,6 @@
 {
   "name": "@l4t/mcp-ai",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A node based MCP service aggregator and integrator to create an expansive set of tools and functions for AI usage.",
   "keywords": [
     "AI",
