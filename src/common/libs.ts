@@ -56,27 +56,34 @@ export const createTransport = (connection: Connection) => {
   )
 }
 
-export const openApiToZodSchema = (parameters: any): Record<string, ZodType> => {
+export const openApiToZodSchema = (
+  parameters: any
+): Record<string, ZodType> => {
   const { properties, required } = parameters
-  
+
   if (!properties) {
     return {}
   }
-  
-  return Object.entries(properties).reduce((acc, [key, propDef]: [string, any]) => {
-    // Create the Zod field and apply optional if needed
-    const zodField = createZodTypeFromDefinition(propDef)
-    const finalField = !required?.includes(key) ? zodField.optional() : zodField
-    
-    // Return new accumulated object with this field
-    return { ...acc, [key]: finalField }
-  }, {})
+
+  return Object.entries(properties).reduce(
+    (acc, [key, propDef]: [string, any]) => {
+      // Create the Zod field and apply optional if needed
+      const zodField = createZodTypeFromDefinition(propDef)
+      const finalField = !required?.includes(key)
+        ? zodField.optional()
+        : zodField
+
+      // Return new accumulated object with this field
+      return { ...acc, [key]: finalField }
+    },
+    {}
+  )
 }
 
 // Single function to handle all types of definitions
 const createZodTypeFromDefinition = (def: any): ZodType => {
   const { type, items } = def
-  
+
   switch (type) {
     case 'string':
       return z.string()
@@ -93,4 +100,3 @@ const createZodTypeFromDefinition = (def: any): ZodType => {
       return z.any()
   }
 }
-

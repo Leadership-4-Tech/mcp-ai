@@ -1,4 +1,7 @@
-export const name = 'integrator'
+import * as features from './features.js'
 
-export * as services from './services.js'
+const createIntegrator = features.create
+
+export const name = 'integrator'
+export { createIntegrator }
 export * from './types.js'

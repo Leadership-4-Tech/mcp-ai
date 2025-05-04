@@ -13,7 +13,114 @@ MCP servers are a pretty sweet idea, but having the ability to integrate them al
 npm install @l4t/mcp-ai
 ```
 
-## Running Aggregator
+## Creating an Integrator
+
+An integrator is a tool that helps connect an LLM to an MCP server (like the aggregator). It can be used to format tools for the LLM provider, extract tool calls from the LLM response, and execute tool calls.
+
+```typescript
+import { createIntegrator } from '@l4t/mcp-ai/integrator'
+import { Provider } from '@l4t/mcp-ai'
+
+// Create an integrator configuration
+const config = {
+  connection: {
+    type: 'http',
+    url: 'http://localhost:3000',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  },
+  provider: Provider.OpenAI,
+  model: 'gpt-4-turbo-preview',
+  maxParallelCalls: 1,
+}
+
+// Initialize the integrator
+const integrator = createIntegrator(config)
+
+// Connect to the MCP server
+await integrator.connect()
+
+try {
+  // Get available tools
+  const tools = await integrator.getTools()
+
+  // Format tools for the LLM provider
+  const formattedTools = integrator.formatToolsForProvider(tools)
+
+  // Example of using the integrator with an LLM
+  const response = await llm.sendMessage('List available tools', formattedTools)
+
+  // Extract tool calls from the LLM response
+  const toolCalls = integrator.extractToolCalls(response)
+
+  // Execute the tool calls
+  const results = await integrator.executeToolCalls(toolCalls)
+
+  // Create a new request with the tool results
+  const newRequest = integrator.createToolResponseRequest(
+    originalRequest,
+    response,
+    results
+  )
+} finally {
+  // Always disconnect when done
+  await integrator.disconnect()
+}
+```
+
+## Creating an Aggregator
+
+An aggregator is a MCP server that can aggregate multiple MCP servers into one. This can provide a single interface for AI to access multiple MCPs.
+This can also be useful for adapting one type of MCP server to another. For example, if Cursor doesn't support http, you can support an http aggregator by putting a SSE aggregator in front.
+
+```typescript
+import { create } from '@l4t/mcp-ai/aggregator'
+
+// Create an aggregator configuration
+const config = {
+  server: {
+    connection: {
+      type: 'http',
+      url: 'http://localhost:3000',
+      port: 3000,
+    },
+    maxParallelCalls: 10,
+  },
+  mcps: [
+    {
+      id: 'filesystem',
+      connection: {
+        type: 'cli',
+        path: 'npx',
+        args: ['-y', '@modelcontextprotocol/server-memory'],
+      },
+    },
+    {
+      id: 'memory',
+      connection: {
+        type: 'cli',
+        path: 'npx',
+        args: ['-y', '@modelcontextprotocol/server-filesystem', '.'],
+      },
+    },
+  ],
+}
+
+// Create and start the aggregator server
+const server = create(config)
+
+// Start the server
+await server.start()
+
+// The server will now be available at http://localhost:3000
+// It will aggregate the tools from both the filesystem and memory MCPs
+
+// When done, stop the server
+await server.stop()
+```
+
+## Running Aggregator (server from CLI)
 
 If you install this library globally it will add the `mcp-aggregator.mts` script to be used for starting up aggregators in any context.
 

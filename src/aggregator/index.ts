@@ -1,5 +1,7 @@
-export * from './types.js'
-export * as services from './services.js'
-export * as features from './features.js'
+import * as features from './features.js'
+
+const createAggregator = features.create
 
 export const name = 'aggregator'
+export { createAggregator }
+export * from './types.js'
