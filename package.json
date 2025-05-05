@@ -17,7 +17,8 @@
   "type": "module",
   "main": "index.js",
   "bin": {
-    "mcp-aggregator": "./bin/mcp-aggregator.js"
+    "mcp-aggregator": "./bin/mcp-aggregator.js",
+    "mcp-simple-server": "./bin/mcp-simple-server.js"
   },
   "config": {
     "commitizen": {

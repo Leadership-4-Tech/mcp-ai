@@ -2,7 +2,7 @@
 
 import { readFileSync } from 'fs'
 import { parseArgs } from 'node:util'
-import { create } from '../src/aggregator/entries/index.ts'
+import { create } from '../src/simple-server/entries/index.ts'
 
 async function main() {
   try {
@@ -22,9 +22,9 @@ async function main() {
 
     if (values.help || positionals.length === 0) {
       console.info(`
-Usage: mcp-aggregator [options] <config-file>
+Usage: mcp-simple-server [options] <config-file>
 
-Launches an MCP Aggregator server according to the configuration passed in.
+Launches an MCP Simple Server according to the configuration passed in.
 
 Options:
   -h, --help     Show this help message
@@ -38,7 +38,7 @@ Arguments:
 
     if (values.version) {
       const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
-      console.info(`mcp-aggregator v${packageJson.version}`)
+      console.info(`mcp-simple-server v${packageJson.version}`)
       process.exit(0)
     }
 
@@ -51,11 +51,11 @@ Arguments:
 
     const fullConfig = JSON.parse(readFileSync(configPath, 'utf-8'))
 
-    // Extract aggregator config - use the whole config if no aggregator property
-    const config = fullConfig.aggregator ? fullConfig.aggregator : fullConfig
+    // Extract server config - use the whole config if no "server" property
+    const config = fullConfig.server ? fullConfig.server : fullConfig
 
     // Create and start the server
-    const server = create(config)
+    const server = create(finalConfig)
 
     // Handle process termination
     process.on('SIGINT', async () => {

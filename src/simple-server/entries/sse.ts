@@ -91,7 +91,7 @@ const create = (config: SimpleServerSseConfig) => {
   }
 
   return {
-    start: async (port: number = DEFAULT_PORT) => {
+    start: async () => {
       const features = await createFeatures(config)
       await setupServer(features)
 
@@ -118,7 +118,7 @@ const create = (config: SimpleServerSseConfig) => {
         })
       })
 
-      app.listen(port)
+      app.listen(config.server.connection.port || DEFAULT_PORT)
     },
     stop: async () => {
       await Promise.all(
