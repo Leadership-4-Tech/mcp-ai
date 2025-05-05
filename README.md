@@ -128,6 +128,146 @@ await server.start()
 await server.stop()
 ```
 
+## Creating a Simple Server
+
+A SimpleServer is a configurable MCP server that can be easily adapted to different protocols (HTTP, SSE, CLI) while maintaining the same tool functionality. This makes it perfect for building custom MCP servers that can be deployed in different environments.
+
+```typescript
+import { create } from '@l4t/mcp-ai/simple-server'
+
+// Create a simple server configuration
+const config = {
+  name: 'my-mcp-server',
+  version: '1.0.0',
+  tools: [
+    {
+      name: 'echo',
+      description: 'Echoes back the input',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          message: { type: 'string' },
+        },
+        required: ['message'],
+      },
+      execute: async (input: { message: string }) => {
+        return { echo: input.message }
+      },
+    },
+  ],
+  server: {
+    connection: {
+      type: 'http',
+      port: 3000,
+    },
+  },
+}
+
+// Create and start the server
+const server = create(config)
+await server.start()
+
+// The server will now be available at http://localhost:3000
+// It will expose the echo tool and handle all MCP protocol details
+
+// When done, stop the server
+await server.stop()
+```
+
+### Simple Server Configuration Examples
+
+#### HTTP Server
+
+```json
+{
+  "name": "my-mcp-server",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "echo",
+      "description": "Echoes back the input",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        },
+        "required": ["message"]
+      }
+    }
+  ],
+  "server": {
+    "connection": {
+      "type": "http",
+      "port": 3000
+    }
+  }
+}
+```
+
+#### SSE Server
+
+```json
+{
+  "name": "my-mcp-server",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "echo",
+      "description": "Echoes back the input",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        },
+        "required": ["message"]
+      }
+    }
+  ],
+  "server": {
+    "connection": {
+      "type": "sse",
+      "port": 3000
+    },
+    "path": "/",
+    "messagesPath": "/messages"
+  }
+}
+```
+
+#### CLI Server
+
+```json
+{
+  "name": "my-mcp-server",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "echo",
+      "description": "Echoes back the input",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        },
+        "required": ["message"]
+      }
+    }
+  ],
+  "server": {
+    "connection": {
+      "type": "cli"
+    }
+  }
+}
+```
+
+The SimpleServer makes it easy to:
+
+- Define your tools once and deploy them in different environments
+- Switch between protocols by just changing the configuration
+- Focus on your tool logic while the server handles MCP protocol details
+- Maintain consistent behavior across different transport mechanisms
+
 ## Running Aggregator (server from CLI)
 
 If you install this library globally it will add the `mcp-aggregator.mts` script to be used for starting up aggregators in any context.

@@ -1,7 +1,5 @@
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import { ClientCapabilities } from '@modelcontextprotocol/sdk/types.js'
-// eslint-disable-next-line import/extensions
-import { version } from '../../package.json'
 
 /**
  * A value that can be serialized to JSON
@@ -234,7 +232,7 @@ export type McpIntegratorFullConfig = Readonly<{
 /**
  * Current version of the MCP library
  */
-export const LibraryVersion = version
+export const LibraryVersion = '1.1.1'
 
 /**
  * Default client configurations for MCP Integrator and Aggregator

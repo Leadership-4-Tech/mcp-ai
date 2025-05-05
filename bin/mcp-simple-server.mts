@@ -52,10 +52,12 @@ Arguments:
     const fullConfig = JSON.parse(readFileSync(configPath, 'utf-8'))
 
     // Extract server config - use the whole config if no "server" property
-    const config = fullConfig.server ? fullConfig.server : fullConfig
+    const config = fullConfig.simpleServer
+      ? fullConfig.simpleServer
+      : fullConfig
 
     // Create and start the server
-    const server = create(finalConfig)
+    const server = create(config)
 
     // Handle process termination
     process.on('SIGINT', async () => {
