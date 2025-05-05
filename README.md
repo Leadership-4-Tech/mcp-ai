@@ -13,6 +13,14 @@ MCP servers are a pretty sweet idea, but having the ability to integrate them al
 npm install @l4t/mcp-ai
 ```
 
+## Tools
+
+The following are the tools available in this library
+
+- Aggregator: Aggregates multiple MCP servers under one configurable roof. Useful for translating supported protocols.
+- Integrator: Easier integration of MCP servers directly into LLM providers.
+- SimpleServer: Build a simple MCP configurable server, where you just provide tool descriptions and execution, it handles the rest. You can configure this to make the same server go from CLI to HTTP or SSE.
+
 ## Creating an Integrator
 
 An integrator is a tool that helps connect an LLM to an MCP server (like the aggregator). It can be used to format tools for the LLM provider, extract tool calls from the LLM response, and execute tool calls.

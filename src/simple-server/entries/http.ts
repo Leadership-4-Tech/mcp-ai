@@ -5,18 +5,15 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 
-import {
-  McpAggregatorHttpConfig,
-  McpClientConfigs,
-} from '../../common/types.js'
+import { McpClientConfigs } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
-import { openApiToZodSchema } from '../../common/libs.js'
+import { SimpleServerHttpConfig } from '../types.js'
 
 const DEFAULT_PORT = 3000
 const BAD_REQUEST_STATUS = 400
 const NOT_FOUND_STATUS = 404
 
-const create = (config: McpAggregatorHttpConfig) => {
+const create = (config: SimpleServerHttpConfig) => {
   const app = express()
   app.use(express.json())
   app.use(cors())
@@ -25,30 +22,19 @@ const create = (config: McpAggregatorHttpConfig) => {
   const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {}
 
   const setupServer = async (features: any) => {
-    const rawTools = await features.getTools()
-    const tools = rawTools.map(tool => ({
-      name: tool.name,
-      description: tool.description || '',
-      parameters: tool.inputSchema,
-    }))
+    features.validateConfig()
 
     const server = new McpServer(
       Object.assign({}, McpClientConfigs.aggregator, {
-        capabilities: { tools },
+        capabilities: { tools: config.tools },
+        name: config.name,
+        version: config.version,
       })
     )
-
-    tools.forEach(tool => {
-      // @ts-ignore
-      server.tool(
-        tool.name,
-        tool.description || '',
-        openApiToZodSchema(tool.parameters),
-        async extra => {
-          const results = await features.executeTool(tool.name, extra)
-          return results as any
-        }
-      )
+    const formatted = features.getFormattedTools()
+    formatted.forEach(tool => {
+      //@ts-ignore
+      server.tool(...tool)
     })
 
     return server
@@ -121,8 +107,7 @@ const create = (config: McpAggregatorHttpConfig) => {
 
   return {
     start: async () => {
-      const features = await createFeatures(config)
-      await features.connect()
+      const features = createFeatures(config)
       // Handle POST requests for client-to-server communication
       app.post(config.server.path || '/', handleRequest(features))
       // Handle GET requests for server-to-client notifications
@@ -146,5 +131,4 @@ const create = (config: McpAggregatorHttpConfig) => {
     },
   }
 }
-
 export { create }

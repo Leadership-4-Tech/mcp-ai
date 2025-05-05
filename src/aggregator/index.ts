@@ -4,4 +4,3 @@ const createAggregator = features.create
 
 export const name = 'aggregator'
 export { createAggregator }
-export * from './types.js'

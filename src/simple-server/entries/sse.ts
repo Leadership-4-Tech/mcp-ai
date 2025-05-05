@@ -1,20 +1,17 @@
-#!/usr/bin/env node
-
 import express from 'express'
 import cors from 'cors'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
-
-import { McpClientConfigs, McpAggregatorSseConfig } from '../../common/types.js'
+import { McpClientConfigs } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
-import { openApiToZodSchema } from '../../common/libs.js'
+import { SimpleServerSseConfig } from '../types.js'
 
 const HTTP_ERROR = 500
 const BAD_REQUEST = 400
 const NOT_FOUND_STATUS = 404
 const DEFAULT_PORT = 3000
 
-const create = (config: McpAggregatorSseConfig) => {
+const create = (config: SimpleServerSseConfig) => {
   // eslint-disable-next-line functional/no-let
   let server: McpServer | undefined
   const transports: Record<string, SSEServerTransport> = {}
@@ -76,33 +73,26 @@ const create = (config: McpAggregatorSseConfig) => {
   }
 
   const setupServer = async (features: any) => {
-    const rawTools = await features.getTools()
-    const tools = rawTools.map(tool => ({
-      name: tool.name,
-      description: tool.description || '',
-      parameters: tool.inputSchema,
-    }))
+    features.validateConfig()
 
     server = new McpServer(
       Object.assign({}, McpClientConfigs.aggregator, {
-        capabilities: { tools },
+        capabilities: { tools: config.tools },
+        name: config.name,
+        version: config.version,
       })
     )
 
-    tools.forEach(tool => {
-      const schema = openApiToZodSchema(tool.parameters)
-      // @ts-ignore
-      server.tool(tool.name, tool.description || '', schema, async extra => {
-        const results = await features.executeTool(tool.name, extra)
-        return results as any
-      })
+    const formatted = features.getFormattedTools()
+    formatted.forEach(tool => {
+      //@ts-ignore
+      server.tool(...tool)
     })
   }
 
   return {
     start: async (port: number = DEFAULT_PORT) => {
       const features = await createFeatures(config)
-      await features.connect()
       await setupServer(features)
 
       const path = config.server.path || '/'

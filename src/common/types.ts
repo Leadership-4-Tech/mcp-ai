@@ -1,5 +1,7 @@
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import { ClientCapabilities } from '@modelcontextprotocol/sdk/types.js'
+// eslint-disable-next-line import/extensions
+import { version } from '../../package.json'
 
 /**
  * A value that can be serialized to JSON
@@ -180,45 +182,46 @@ export type McpAggregatorConfigBase = Readonly<{
 }>
 
 /**
- * MCP Aggregator configuration with HTTP server
+ * Configuration for an HTTP server
  */
-export type McpAggregatorConfigWithHttpServer = McpAggregatorConfigBase &
-  Readonly<{
-    server: HttpServerConfig
-  }>
+export type ServerHttpConfig = Readonly<{
+  server: HttpServerConfig
+}>
 
 /**
- * MCP Aggregator configuration with WebSocket server
+ * Configuration for a WebSocket server
  */
-export type McpAggregatorConfigWithWsServer = McpAggregatorConfigBase &
-  Readonly<{
-    server: WsServerConfig
-  }>
+export type ServerWsConfig = Readonly<{
+  server: WsServerConfig
+}>
 
 /**
- * MCP Aggregator configuration with CLI server
+ * Configuration for a CLI server
  */
-export type McpAggregatorConfigWithCliServer = McpAggregatorConfigBase &
-  Readonly<{
-    server: CliServerConfig
-  }>
+export type ServerCliConfig = Readonly<{
+  server: CliServerConfig
+}>
 
 /**
- * MCP Aggregator configuration with SSE server
+ * Configuration for a SSE server
  */
-export type McpAggregatorConfigWithSseServer = McpAggregatorConfigBase &
-  Readonly<{
-    server: SseServerConfig
-  }>
+export type ServerSseConfig = Readonly<{
+  server: SseServerConfig
+}>
+
+export type McpAggregatorHttpConfig = McpAggregatorConfigBase & ServerHttpConfig
+export type McpAggregatorWsConfig = McpAggregatorConfigBase & ServerWsConfig
+export type McpAggregatorCliConfig = McpAggregatorConfigBase & ServerCliConfig
+export type McpAggregatorSseConfig = McpAggregatorConfigBase & ServerSseConfig
 
 /**
  * Union type of all possible MCP Aggregator configurations
  */
 export type McpAggregatorConfig =
-  | McpAggregatorConfigWithHttpServer
-  | McpAggregatorConfigWithWsServer
-  | McpAggregatorConfigWithCliServer
-  | McpAggregatorConfigWithSseServer
+  | McpAggregatorHttpConfig
+  | McpAggregatorWsConfig
+  | McpAggregatorCliConfig
+  | McpAggregatorSseConfig
 
 /**
  * Full configuration for both MCP Integrator and Aggregator
@@ -231,7 +234,7 @@ export type McpIntegratorFullConfig = Readonly<{
 /**
  * Current version of the MCP library
  */
-export const LibraryVersion = '1.0.0'
+export const LibraryVersion = version
 
 /**
  * Default client configurations for MCP Integrator and Aggregator

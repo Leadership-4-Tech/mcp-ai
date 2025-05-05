@@ -1,14 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
-import {
-  McpAggregatorConfigWithCliServer,
-  McpClientConfigs,
-} from '../../common/types.js'
+import { McpAggregatorCliConfig, McpClientConfigs } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
 import { openApiToZodSchema } from '../../common/libs.js'
 
-const create = (config: McpAggregatorConfigWithCliServer) => {
+const create = (config: McpAggregatorCliConfig) => {
   // eslint-disable-next-line functional/no-let
   let server: McpServer | undefined
 
