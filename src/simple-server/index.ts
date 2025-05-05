@@ -1,6 +1,7 @@
 import * as features from './features.js'
+import { create } from './entries/index.js'
 
-const createSimpleServer = features.create
+const createSimpleServer = create
 
 export const name = 'simple-server'
 export { createSimpleServer }
