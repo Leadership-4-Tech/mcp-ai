@@ -1,6 +1,6 @@
 {
   "name": "@l4t/mcp-ai",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A set of tools for making integration and aggregation of MCP servers extremely easy.",
   "keywords": [
     "AI",
@@ -17,8 +17,7 @@
   "type": "module",
   "main": "index.js",
   "bin": {
-    "mcp-aggregator": "./bin/mcp-aggregator.js",
-    "mcp-simple-server": "./bin/mcp-simple-server.js"
+    "mcp-aggregator": "./bin/mcp-aggregator.js"
   },
   "config": {
     "commitizen": {
