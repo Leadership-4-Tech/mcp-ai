@@ -5,7 +5,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 
-import { McpClientConfigs } from '../../common/types.js'
+import { McpClientConfigs, ExpressOptions } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
 import { SimpleServerHttpConfig } from '../types.js'
 
@@ -13,10 +13,12 @@ const DEFAULT_PORT = 3000
 const BAD_REQUEST_STATUS = 400
 const NOT_FOUND_STATUS = 404
 
-const create = (config: SimpleServerHttpConfig) => {
+const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
   const app = express()
   app.use(express.json())
   app.use(cors())
+
+  options?.preRouteMiddleware?.forEach(middleware => app.use(middleware))
 
   // Map to store transports by session ID
   const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {}
@@ -108,6 +110,11 @@ const create = (config: SimpleServerHttpConfig) => {
   return {
     start: async () => {
       const features = createFeatures(config)
+
+      options?.additionalRoutes?.forEach(route => {
+        app[route.method](route.path, route.handler)
+      })
+
       // Handle POST requests for client-to-server communication
       app.post(config.server.path || '/', handleRequest(features))
       // Handle GET requests for server-to-client notifications

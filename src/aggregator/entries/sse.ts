@@ -3,7 +3,11 @@ import cors from 'cors'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 
-import { McpClientConfigs, McpAggregatorSseConfig } from '../../common/types.js'
+import {
+  McpClientConfigs,
+  McpAggregatorSseConfig,
+  ExpressOptions,
+} from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
 import { openApiToZodSchema } from '../../common/libs.js'
 
@@ -12,13 +16,15 @@ const BAD_REQUEST = 400
 const NOT_FOUND_STATUS = 404
 const DEFAULT_PORT = 3000
 
-const create = (config: McpAggregatorSseConfig) => {
+const create = (config: McpAggregatorSseConfig, options?: ExpressOptions) => {
   // eslint-disable-next-line functional/no-let
   let server: McpServer | undefined
   const transports: Record<string, SSEServerTransport> = {}
   const app = express()
   app.use(express.json())
   app.use(cors())
+
+  options?.preRouteMiddleware?.forEach(middleware => app.use(middleware))
 
   const handleSseConnection = async (res: express.Response) => {
     // eslint-disable-next-line functional/no-try-statements
@@ -106,6 +112,10 @@ const create = (config: McpAggregatorSseConfig) => {
       const path = config.server.path || '/'
       const messagesPath = config.server.messagesPath || '/messages'
 
+      options?.additionalRoutes?.forEach(route => {
+        app[route.method](route.path, route.handler)
+      })
+
       app.get(path, async (req, res) => {
         // eslint-disable-next-line functional/no-try-statements
         try {
@@ -116,7 +126,6 @@ const create = (config: McpAggregatorSseConfig) => {
       })
 
       app.post(messagesPath, handlePostMessage)
-
       // Add catch-all route for non-existent URLs
       app.use((req, res) => {
         res.status(NOT_FOUND_STATUS).json({

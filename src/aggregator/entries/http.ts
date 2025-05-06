@@ -8,6 +8,7 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import {
   McpAggregatorHttpConfig,
   McpClientConfigs,
+  ExpressOptions,
 } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
 import { openApiToZodSchema } from '../../common/libs.js'
@@ -16,10 +17,12 @@ const DEFAULT_PORT = 3000
 const BAD_REQUEST_STATUS = 400
 const NOT_FOUND_STATUS = 404
 
-const create = (config: McpAggregatorHttpConfig) => {
+const create = (config: McpAggregatorHttpConfig, options?: ExpressOptions) => {
   const app = express()
   app.use(express.json())
   app.use(cors())
+
+  options?.preRouteMiddleware?.forEach(middleware => app.use(middleware))
 
   // Map to store transports by session ID
   const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {}
@@ -123,6 +126,11 @@ const create = (config: McpAggregatorHttpConfig) => {
     start: async () => {
       const features = await createFeatures(config)
       await features.connect()
+
+      options?.additionalRoutes?.forEach(route => {
+        app[route.method](route.path, route.handler)
+      })
+
       // Handle POST requests for client-to-server communication
       app.post(config.server.path || '/', handleRequest(features))
       // Handle GET requests for server-to-client notifications
