@@ -1,3 +1,4 @@
+import express from 'express'
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import { ClientCapabilities } from '@modelcontextprotocol/sdk/types.js'
 
@@ -264,4 +265,21 @@ export type OpenAPISchema = Readonly<{
     >
   >
   required?: Readonly<string[]>
+}>
+
+export type ExpressRoute = Readonly<{
+  path: string
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  handler: (req: express.Request, res: express.Response) => Promise<void>
+}>
+
+export type ExpressMiddleware = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => Promise<void>
+
+export type ExpressOptions = Readonly<{
+  additionalRoutes?: ExpressRoute[]
+  preRouteMiddleware?: ExpressMiddleware[]
 }>
