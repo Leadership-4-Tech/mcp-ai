@@ -1,6 +1,6 @@
 {
   "name": "@l4t/mcp-ai",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "A set of tools for making integration and aggregation of MCP servers extremely easy.",
   "keywords": [
     "AI",
