@@ -22,25 +22,41 @@ export function createChatIntegrator(
   // eslint-disable-next-line functional/no-let
   let features: any
 
-  const initialize = async (systemMessage = 'You are a helpful assistant.') => {
+  const setupFeatures = async () => {
     features = await createIntegratorFeatures(config)
     await features.connect()
+  }
 
-    const tools = await features.getTools()
-    const formattedTools = features.formatToolsForProvider(tools)
-    provider = createProvider(config.provider, client, config)
+  const wrapWithFeatures = async (func: any) => {
+    features = await createIntegratorFeatures(config)
+    await features.connect()
+    return Promise.resolve()
+      .then(() => {
+        return func()
+      })
+      .finally(() => {
+        features.disconnect()
+      })
+  }
 
-    state = {
-      request: provider.createInitialRequest(
-        getModel(),
-        systemMessage,
-        formattedTools
-      ),
-      lastResponse: {} as any,
-      tools: [],
-    }
+  const initialize = async (systemMessage = 'You are a helpful assistant.') => {
+    return wrapWithFeatures(async () => {
+      const tools = await features.getTools()
+      const formattedTools = features.formatToolsForProvider(tools)
+      provider = createProvider(config.provider, client, config)
 
-    return integrator
+      state = {
+        request: provider.createInitialRequest(
+          getModel(),
+          systemMessage,
+          formattedTools
+        ),
+        lastResponse: {} as any,
+        tools: [],
+      }
+
+      return integrator
+    })
   }
 
   const sendMessage = async (userInput: string) => {
@@ -76,27 +92,33 @@ export function createChatIntegrator(
 
         // Check for tool calls
         if (provider.hasToolCalls(currentResponse)) {
-          const calls = features.extractToolCalls(currentResponse)
-          if (calls && calls.length > 0) {
-            // Execute tool calls
-            const callResponses = await features.executeToolCalls(calls)
+          const shouldContinue = await wrapWithFeatures(async () => {
+            const calls = features.extractToolCalls(currentResponse)
+            if (calls && calls.length > 0) {
+              // Execute tool calls
+              const callResponses = await features.executeToolCalls(calls)
 
-            // Create new request with tool results
-            currentRequest = features.createToolResponseRequest(
-              currentRequest,
-              currentResponse,
-              callResponses
-            )
+              // Create new request with tool results
+              currentRequest = features.createToolResponseRequest(
+                currentRequest,
+                currentResponse,
+                callResponses
+              )
 
-            // Update state
-            // @ts-ignore
-            // eslint-disable-next-line functional/immutable-data, require-atomic-updates
-            state.request = currentRequest
-            // @ts-ignore
-            // eslint-disable-next-line functional/immutable-data, require-atomic-updates
-            state.lastResponse = currentResponse
+              // Update state
+              // @ts-ignore
+              // eslint-disable-next-line functional/immutable-data, require-atomic-updates
+              state.request = currentRequest
+              // @ts-ignore
+              // eslint-disable-next-line functional/immutable-data, require-atomic-updates
+              state.lastResponse = currentResponse
 
-            toolCallCount++
+              toolCallCount++
+              return true
+            }
+            return false
+          })
+          if (shouldContinue) {
             continue
           }
         }

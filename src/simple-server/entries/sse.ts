@@ -92,38 +92,44 @@ const create = (config: SimpleServerSseConfig, options?: ExpressOptions) => {
     })
   }
 
+  const getApp = async (): Promise<express.Express> => {
+    const features = await createFeatures(config)
+    await setupServer(features)
+
+    const path = config.server.path || '/'
+    const messagesPath = config.server.messagesPath || '/messages'
+
+    options?.additionalRoutes?.forEach(route => {
+      app[route.method](route.path, route.handler)
+    })
+
+    app.get(path, async (req, res) => {
+      // eslint-disable-next-line functional/no-try-statements
+      try {
+        await handleSseConnection(res)
+      } catch {
+        // Error already handled in handleSseConnection
+      }
+    })
+
+    app.post(messagesPath, handlePostMessage)
+
+    // Add catch-all route for non-existent URLs
+    app.use((req, res) => {
+      res.status(NOT_FOUND_STATUS).json({
+        error: 'Not Found',
+        message: `The requested URL ${req.url} was not found on this server`,
+        status: NOT_FOUND_STATUS,
+      })
+    })
+
+    return app
+  }
+
   return {
+    getApp,
     start: async () => {
-      const features = await createFeatures(config)
-      await setupServer(features)
-
-      const path = config.server.path || '/'
-      const messagesPath = config.server.messagesPath || '/messages'
-
-      options?.additionalRoutes?.forEach(route => {
-        app[route.method](route.path, route.handler)
-      })
-
-      app.get(path, async (req, res) => {
-        // eslint-disable-next-line functional/no-try-statements
-        try {
-          await handleSseConnection(res)
-        } catch {
-          // Error already handled in handleSseConnection
-        }
-      })
-
-      app.post(messagesPath, handlePostMessage)
-
-      // Add catch-all route for non-existent URLs
-      app.use((req, res) => {
-        res.status(NOT_FOUND_STATUS).json({
-          error: 'Not Found',
-          message: `The requested URL ${req.url} was not found on this server`,
-          status: NOT_FOUND_STATUS,
-        })
-      })
-
+      const app = await getApp()
       app.listen(config.server.connection.port || DEFAULT_PORT)
     },
     stop: async () => {

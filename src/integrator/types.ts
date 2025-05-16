@@ -10,7 +10,7 @@ export type OpenAIToolFormat = Readonly<{
   function: Readonly<{
     name: string
     description: string
-    parameters: OpenAPISchema
+    properties: OpenAPISchema
   }>
 }>
 

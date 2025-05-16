@@ -107,30 +107,36 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
     await transport.handleRequest(req, res)
   }
 
+  const getApp = async (): Promise<express.Express> => {
+    const features = createFeatures(config)
+
+    options?.additionalRoutes?.forEach(route => {
+      app[route.method](route.path, route.handler)
+    })
+
+    // Handle POST requests for client-to-server communication
+    app.post(config.server.path || '/', handleRequest(features))
+    // Handle GET requests for server-to-client notifications
+    app.get(config.server.path || '/', handleSessionRequest)
+    // Handle DELETE requests for session termination
+    app.delete(config.server.path || '/', handleSessionRequest)
+
+    // Add catch-all route for non-existent URLs
+    app.use((req, res) => {
+      res.status(NOT_FOUND_STATUS).json({
+        error: 'Not Found',
+        message: `The requested URL ${req.url} was not found on this server`,
+        status: NOT_FOUND_STATUS,
+      })
+    })
+
+    return app
+  }
+
   return {
+    getApp,
     start: async () => {
-      const features = createFeatures(config)
-
-      options?.additionalRoutes?.forEach(route => {
-        app[route.method](route.path, route.handler)
-      })
-
-      // Handle POST requests for client-to-server communication
-      app.post(config.server.path || '/', handleRequest(features))
-      // Handle GET requests for server-to-client notifications
-      app.get(config.server.path || '/', handleSessionRequest)
-      // Handle DELETE requests for session termination
-      app.delete(config.server.path || '/', handleSessionRequest)
-
-      // Add catch-all route for non-existent URLs
-      app.use((req, res) => {
-        res.status(NOT_FOUND_STATUS).json({
-          error: 'Not Found',
-          message: `The requested URL ${req.url} was not found on this server`,
-          status: NOT_FOUND_STATUS,
-        })
-      })
-
+      const app = await getApp()
       app.listen(config.server.connection.port || DEFAULT_PORT)
     },
     stop: async () => {

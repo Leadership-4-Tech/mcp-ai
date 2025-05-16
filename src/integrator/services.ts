@@ -29,13 +29,18 @@ const createExecuteToolCalls =
     asyncMap(
       calls,
       async call => {
-        const result = await client.callTool({
-          id: call.id,
-          name: call.name,
-          // @ts-ignore I have absolutely seen the requirement to have this.
-          arguments: call.input,
-          input: call.input,
-        })
+        const result = await client
+          .callTool({
+            id: call.id,
+            name: call.name,
+            // @ts-ignore I have absolutely seen the requirement to have this.
+            arguments: call.input,
+            input: call.input,
+          })
+          .catch(e => {
+            console.error(e)
+            throw e
+          })
         return {
           id: call.id,
           content: result.content,
@@ -63,7 +68,7 @@ const createOpenAIService = (): LLMIntegrationService<Provider.OpenAI> => {
       function: {
         name: tool.name,
         description: tool.description,
-        parameters: tool.inputSchema,
+        properties: tool.inputSchema,
       },
     }))
 
@@ -249,7 +254,10 @@ export const create = <P extends Provider>(
   const integrationService = createIntegrationService<P>(config.provider)
 
   const getTools = async () => {
-    const result = await client.listTools()
+    const result = await client.listTools().catch(e => {
+      console.error(e)
+      throw e
+    })
     return result.tools as readonly McpTool[]
   }
 
