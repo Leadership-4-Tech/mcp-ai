@@ -57,6 +57,7 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
         const server = await setupServer(features)
         transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
+          enableJsonResponse: true,
           onsessioninitialized: sessionId => {
             // Store the transport by session ID
             // eslint-disable-next-line functional/immutable-data

@@ -47,6 +47,7 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
         const transport: StreamableHTTPServerTransport =
           new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined,
+            enableJsonResponse: true,
           })
         res.on('close', () => {
           console.log('Request closed')
