@@ -82,21 +82,34 @@ export const openApiToZodSchema = (
 
 // Single function to handle all types of definitions
 const createZodTypeFromDefinition = (def: any): ZodType => {
-  const { type, items } = def
+  const { type, items, nullable } = def
 
+  let zodType: ZodType
   switch (type) {
     case 'string':
-      return z.string()
+      zodType = z.string()
+      break
     case 'number':
     case 'integer':
-      return z.number()
+      zodType = z.number()
+      break
     case 'boolean':
-      return z.boolean()
+      zodType = z.boolean()
+      break
     case 'array':
-      return z.array(items ? createZodTypeFromDefinition(items) : z.any())
+      zodType = z.array(items ? createZodTypeFromDefinition(items) : z.any())
+      break
     case 'object':
-      return z.object(openApiToZodSchema(def))
+      zodType = z.object(openApiToZodSchema(def))
+      break
     default:
-      return z.any()
+      zodType = z.any()
   }
+
+  // Handle nullable
+  if (nullable) {
+    zodType = zodType.nullable()
+  }
+
+  return zodType
 }

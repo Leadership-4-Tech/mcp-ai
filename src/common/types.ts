@@ -269,6 +269,10 @@ export type OpenAPISchema = Readonly<{
         type: string
         description?: string
         enum?: Readonly<string[]>
+        /**
+         * If true, the value can be null in addition to its type
+         */
+        nullable?: boolean
       }
     >
   >
