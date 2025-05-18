@@ -50,7 +50,6 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
             enableJsonResponse: true,
           })
         res.on('close', () => {
-          console.log('Request closed')
           transport.close()
           server.close()
         })
