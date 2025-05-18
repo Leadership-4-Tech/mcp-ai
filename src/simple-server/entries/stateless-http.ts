@@ -1,9 +1,7 @@
-import { randomUUID } from 'node:crypto'
 import express from 'express'
 import cors from 'cors'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 
 import { McpClientConfigs, ExpressOptions } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
@@ -44,68 +42,46 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
 
   const handleRequest =
     (features: any) => async (req: express.Request, res: express.Response) => {
-      // Check for existing session ID
-      const sessionId = req.headers['mcp-session-id'] as string | undefined
-      // eslint-disable-next-line functional/no-let
-      let transport: StreamableHTTPServerTransport
-
-      if (sessionId && transports[sessionId]) {
-        // Reuse existing transport
-        transport = transports[sessionId]
-      } else if (!sessionId && isInitializeRequest(req.body)) {
-        // New initialization request
+      try {
         const server = await setupServer(features)
-        transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => randomUUID(),
-          enableJsonResponse: true,
-          onsessioninitialized: sessionId => {
-            // Store the transport by session ID
-            // eslint-disable-next-line functional/immutable-data
-            transports[sessionId] = transport
-          },
+        const transport: StreamableHTTPServerTransport =
+          new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+            enableJsonResponse: true,
+          })
+        res.on('close', () => {
+          console.log('Request closed')
+          transport.close()
+          server.close()
         })
-
-        // Clean up transport when closed
-        // eslint-disable-next-line functional/immutable-data
-        transport.onclose = () => {
-          if (transport.sessionId) {
-            // eslint-disable-next-line functional/immutable-data
-            delete transports[transport.sessionId]
-          }
-        }
-
-        // Connect to the MCP server
         await server.connect(transport)
-      } else {
-        // Invalid request
-        res.status(BAD_REQUEST_STATUS).json({
-          jsonrpc: '2.0',
-          error: {
-            code: -32000,
-            message: 'Bad Request: No valid session ID provided',
-          },
-          id: null,
-        })
-        return
+        await transport.handleRequest(req, res, req.body)
+      } catch (error) {
+        console.error('Error handling MCP request:', error)
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: '2.0',
+            error: {
+              code: -32603,
+              message: 'Internal server error',
+            },
+            id: null,
+          })
+        }
       }
-
-      // Handle the request
-      await transport.handleRequest(req, res, req.body)
     }
 
-  // Reusable handler for GET and DELETE requests
-  const handleSessionRequest = async (
-    req: express.Request,
-    res: express.Response
-  ) => {
-    const sessionId = req.headers['mcp-session-id'] as string | undefined
-    if (!sessionId || !transports[sessionId]) {
-      res.status(BAD_REQUEST_STATUS).send('Invalid or missing session ID')
-      return
-    }
-
-    const transport = transports[sessionId]
-    await transport.handleRequest(req, res)
+  const _unhandledRequest = (req, res: express.Response) => {
+    res.writeHead(405).end(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        error: {
+          code: -32000,
+          message: 'Method not allowed.',
+        },
+        id: null,
+      })
+    )
   }
 
   const getApp = async (): Promise<express.Express> => {
@@ -118,9 +94,9 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
     // Handle POST requests for client-to-server communication
     app.post(config.server.path || '/', handleRequest(features))
     // Handle GET requests for server-to-client notifications
-    app.get(config.server.path || '/', handleSessionRequest)
+    app.get(config.server.path || '/', _unhandledRequest)
     // Handle DELETE requests for session termination
-    app.delete(config.server.path || '/', handleSessionRequest)
+    app.delete(config.server.path || '/', _unhandledRequest)
 
     // Add catch-all route for non-existent URLs
     app.use((req, res) => {

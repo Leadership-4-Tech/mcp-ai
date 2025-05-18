@@ -10,12 +10,8 @@ export function createClaudeProvider(client: any): ChatProvider {
     ): ChatRequest {
       const request = {
         model,
-        messages: [
-          {
-            role: 'system',
-            content: systemMessage,
-          },
-        ],
+        system: systemMessage,
+        messages: [],
         tools,
       }
       return request

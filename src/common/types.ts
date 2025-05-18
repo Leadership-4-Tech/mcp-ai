@@ -188,6 +188,14 @@ export type ServerHttpConfig = Readonly<{
 }>
 
 /**
+ * Configuration for a stateless HTTP server
+ */
+export type ServerStatelessHttpConfig = Readonly<{
+  server: HttpServerConfig
+  stateless: true
+}>
+
+/**
  * Configuration for a WebSocket server
  */
 export type ServerWsConfig = Readonly<{

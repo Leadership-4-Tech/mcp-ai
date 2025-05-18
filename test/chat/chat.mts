@@ -17,15 +17,22 @@ parser.add_argument('config', {
   help: 'Path to the configuration file',
 })
 
+parser.add_argument('-k', '--integrator-key', {
+  help: 'Path to the configuration file',
+  default: 'integrator',
+})
+
 const args = parser.parse_args()
 
-const getConfig = (configPath: string): McpIntegratorConfig => {
+const getConfig = (args): McpIntegratorConfig => {
+  const configPath = args.config
+  const key = args.integrator_key
   const config = fs.readFileSync(configPath, 'utf8')
-  return JSON.parse(config).integrator as McpIntegratorConfig
+  return JSON.parse(config)[key] as McpIntegratorConfig
 }
 
 async function main() {
-  const config = getConfig(args.config)
+  const config = getConfig(args)
 
   // Initialize clients based on provider
   let client: any
@@ -77,6 +84,7 @@ async function main() {
 
     console.log('\nChat ended. Goodbye!')
   } finally {
+    console.log('Disconnecting')
     // Clean up
     await integrator.disconnect()
   }
