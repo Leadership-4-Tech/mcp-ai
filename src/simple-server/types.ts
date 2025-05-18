@@ -6,9 +6,37 @@ import {
   McpTool,
 } from '../common/types'
 
+/**
+ * The value or an array of the types of value
+ */
+type Arrayable<T> = T | readonly T[]
+
+/**
+ * A JSON compliant object.
+ */
+type JsonObj = Readonly<{
+  [s: string]: JsonAble | null | undefined
+}>
+
+/**
+ * A description of valid json values.
+ */
+export type JsonAble =
+  | Arrayable<JsonObj>
+  | readonly (number | string | boolean)[]
+  | number
+  | string
+  | boolean
+  | null
+  | undefined
+
 export type ServerTool = McpTool &
   Readonly<{
-    execute: (input: any) => Promise<any>
+    /**
+     * An execute function that returns your native type. This is automatically converted to
+     * the correct format for MCP as a stringified JSON.
+     */
+    execute: (input: any) => Promise<JsonAble>
   }>
 
 /**
