@@ -11,6 +11,16 @@ export const create = (config: SimpleServerConfig) => {
       openApiToZodSchema(tool.inputSchema),
       async (input: any) => {
         const result = await tool.execute(input)
+        if (result === undefined) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(null),
+              },
+            ],
+          }
+        }
         return {
           content: [
             {
