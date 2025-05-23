@@ -100,7 +100,7 @@ const createZodTypeFromDefinition = (def: any): ZodType => {
       zodType = z.array(items ? createZodTypeFromDefinition(items) : z.any())
       break
     case 'object':
-      zodType = z.object(openApiToZodSchema(def))
+      zodType = z.object(openApiToZodSchema(def)).passthrough()
       break
     default:
       zodType = z.any()
