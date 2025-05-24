@@ -100,7 +100,7 @@ const create = (config: SimpleServerSseConfig, options?: ExpressOptions) => {
     const messagesPath = config.server.messagesPath || '/messages'
 
     options?.additionalRoutes?.forEach(route => {
-      app[route.method](route.path, route.handler)
+      app[route.method.toLowerCase()](route.path, route.handler)
     })
 
     app.get(path, async (req, res) => {

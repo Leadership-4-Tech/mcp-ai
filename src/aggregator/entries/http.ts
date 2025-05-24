@@ -129,7 +129,7 @@ const create = (config: McpAggregatorHttpConfig, options?: ExpressOptions) => {
       await features.connect()
 
       options?.additionalRoutes?.forEach(route => {
-        app[route.method](route.path, route.handler)
+        app[route.method.toLowerCase()](route.path, route.handler)
       })
 
       // Handle POST requests for client-to-server communication
