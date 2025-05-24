@@ -87,7 +87,7 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
     const features = createFeatures(config)
 
     options?.additionalRoutes?.forEach(route => {
-      app[route.method](route.path, route.handler)
+      app[route.method.toLowerCase()](route.path, route.handler)
     })
 
     // Handle POST requests for client-to-server communication
