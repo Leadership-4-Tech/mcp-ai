@@ -12,14 +12,14 @@ import {
 } from '../../common/types.js'
 import { create as createFeatures } from '../features.js'
 import { openApiToZodSchema } from '../../common/libs.js'
-
+import bodyParser from 'body-parser'
 const DEFAULT_PORT = 3000
 const BAD_REQUEST_STATUS = 400
 const NOT_FOUND_STATUS = 404
 
 const create = (config: McpAggregatorHttpConfig, options?: ExpressOptions) => {
   const app = express()
-  app.use(express.json(options?.jsonBodyParser))
+  app.use(bodyParser.json(options?.jsonBodyParser))
   app.use(cors())
 
   options?.preRouteMiddleware?.forEach(middleware => app.use(middleware))

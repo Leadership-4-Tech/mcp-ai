@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import bodyParser from 'body-parser'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 
@@ -13,7 +14,7 @@ const NOT_FOUND_STATUS = 404
 
 const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
   const app = express()
-  app.use(express.json(options?.jsonBodyParser))
+  app.use(bodyParser.json(options?.jsonBodyParser))
   app.use(cors())
 
   options?.preRouteMiddleware?.forEach(middleware => app.use(middleware))
