@@ -13,7 +13,7 @@ const NOT_FOUND_STATUS = 404
 
 const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
   const app = express()
-  app.use(express.json())
+  app.use(express.json(options?.jsonBodyParser))
   app.use(cors())
 
   options?.preRouteMiddleware?.forEach(middleware => app.use(middleware))

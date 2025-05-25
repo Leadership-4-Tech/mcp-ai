@@ -294,4 +294,8 @@ export type ExpressMiddleware = (
 export type ExpressOptions = Readonly<{
   additionalRoutes?: ExpressRoute[]
   preRouteMiddleware?: ExpressMiddleware[]
+  jsonBodyParser?: {
+    limit?: string
+    strict?: boolean
+  }
 }>
