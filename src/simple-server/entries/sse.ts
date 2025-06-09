@@ -21,7 +21,10 @@ const create = (config: SimpleServerSseConfig, options?: ExpressOptions) => {
 
   options?.preRouteMiddleware?.forEach(middleware => app.use(middleware))
 
-  const handleSseConnection = async (res: express.Response) => {
+  const handleSseConnection = async (
+    req: express.Request,
+    res: express.Response
+  ) => {
     // eslint-disable-next-line functional/no-try-statements
     try {
       const transport = new SSEServerTransport('/messages', res)
@@ -38,8 +41,6 @@ const create = (config: SimpleServerSseConfig, options?: ExpressOptions) => {
       if (server) {
         await server.connect(transport)
       }
-
-      return sessionId
     } catch {
       if (!res.headersSent) {
         res.status(HTTP_ERROR).send('Error establishing SSE stream')
@@ -92,6 +93,19 @@ const create = (config: SimpleServerSseConfig, options?: ExpressOptions) => {
     })
   }
 
+  const _routeWrapper = async (
+    func: (req: express.Request, res: express.Response) => Promise<void> | void
+  ) => {
+    if (options?.afterRouteCallback) {
+      return async (req: express.Request, res: express.Response) => {
+        await func(req, res)
+        // @ts-ignore
+        await options.afterRouteCallback(req, res)
+      }
+    }
+    return func
+  }
+
   const getApp = async (): Promise<express.Express> => {
     const features = await createFeatures(config)
     await setupServer(features)
@@ -103,25 +117,20 @@ const create = (config: SimpleServerSseConfig, options?: ExpressOptions) => {
       app[route.method.toLowerCase()](route.path, route.handler)
     })
 
-    app.get(path, async (req, res) => {
-      // eslint-disable-next-line functional/no-try-statements
-      try {
-        await handleSseConnection(res)
-      } catch {
-        // Error already handled in handleSseConnection
-      }
-    })
+    app.get(path, _routeWrapper(handleSseConnection))
 
-    app.post(messagesPath, handlePostMessage)
+    app.post(messagesPath, _routeWrapper(handlePostMessage))
 
     // Add catch-all route for non-existent URLs
-    app.use((req, res) => {
-      res.status(NOT_FOUND_STATUS).json({
-        error: 'Not Found',
-        message: `The requested URL ${req.url} was not found on this server`,
-        status: NOT_FOUND_STATUS,
+    app.use(
+      _routeWrapper((req, res) => {
+        res.status(NOT_FOUND_STATUS).json({
+          error: 'Not Found',
+          message: `The requested URL ${req.url} was not found on this server`,
+          status: NOT_FOUND_STATUS,
+        })
       })
-    })
+    )
 
     return app
   }

@@ -84,6 +84,19 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
     )
   }
 
+  const _routeWrapper = async (
+    func: (req: express.Request, res: express.Response) => Promise<void> | void
+  ) => {
+    if (options?.afterRouteCallback) {
+      return async (req: express.Request, res: express.Response) => {
+        await func(req, res)
+        // @ts-ignore
+        await options.afterRouteCallback(req, res)
+      }
+    }
+    return func
+  }
+
   const getApp = async (): Promise<express.Express> => {
     const features = createFeatures(config)
 
@@ -92,20 +105,22 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
     })
 
     // Handle POST requests for client-to-server communication
-    app.post(config.server.path || '/', handleRequest(features))
+    app.post(config.server.path || '/', _routeWrapper(handleRequest(features)))
     // Handle GET requests for server-to-client notifications
-    app.get(config.server.path || '/', _unhandledRequest)
+    app.get(config.server.path || '/', _routeWrapper(_unhandledRequest))
     // Handle DELETE requests for session termination
-    app.delete(config.server.path || '/', _unhandledRequest)
+    app.delete(config.server.path || '/', _routeWrapper(_unhandledRequest))
 
     // Add catch-all route for non-existent URLs
-    app.use((req, res) => {
-      res.status(NOT_FOUND_STATUS).json({
-        error: 'Not Found',
-        message: `The requested URL ${req.url} was not found on this server`,
-        status: NOT_FOUND_STATUS,
+    app.use(
+      _routeWrapper((req, res) => {
+        res.status(NOT_FOUND_STATUS).json({
+          error: 'Not Found',
+          message: `The requested URL ${req.url} was not found on this server`,
+          status: NOT_FOUND_STATUS,
+        })
       })
-    })
+    )
 
     return app
   }

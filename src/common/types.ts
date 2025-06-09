@@ -294,6 +294,10 @@ export type ExpressMiddleware = (
 export type ExpressOptions = Readonly<{
   additionalRoutes?: ExpressRoute[]
   preRouteMiddleware?: ExpressMiddleware[]
+  afterRouteCallback?: (
+    req: express.Request,
+    res: express.Response
+  ) => Promise<void> | void
   limit?: string
   jsonBodyParser?: {
     limit?: string
