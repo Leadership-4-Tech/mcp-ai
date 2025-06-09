@@ -84,7 +84,7 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
     )
   }
 
-  const _routeWrapper = async (
+  const _routeWrapper = (
     func: (req: express.Request, res: express.Response) => Promise<void> | void
   ) => {
     if (options?.afterRouteCallback) {
