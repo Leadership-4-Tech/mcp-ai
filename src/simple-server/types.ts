@@ -1,3 +1,4 @@
+import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import {
   ServerHttpConfig,
   ServerWsConfig,
@@ -37,7 +38,8 @@ export type ServerTool = McpTool &
      * An execute function that returns your native type. This is automatically converted to
      * the correct format for MCP as a stringified JSON.
      */
-    execute: (input: any) => Promise<JsonAble>
+    //execute: (input: any) => Promise<JsonAble>
+    execute: (input: any) => Promise<CallToolResult>
   }>
 
 /**

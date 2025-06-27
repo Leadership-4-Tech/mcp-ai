@@ -21,14 +21,7 @@ export const create = (config: SimpleServerConfig) => {
             ],
           }
         }
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        }
+        return result
       },
     ])
   }
