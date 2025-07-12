@@ -143,6 +143,9 @@ const create = (config: McpAggregatorSseConfig, options?: ExpressOptions) => {
       )
       await server?.close()
     },
+    set: (key: string, value: any) => {
+      app.set(key, value)
+    },
   }
 }
 

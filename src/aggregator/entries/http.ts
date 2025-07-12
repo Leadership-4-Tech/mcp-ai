@@ -153,6 +153,9 @@ const create = (config: McpAggregatorHttpConfig, options?: ExpressOptions) => {
     stop: async () => {
       Object.values(transports).forEach(transport => transport.close())
     },
+    set: (key: string, value: any) => {
+      app.set(key, value)
+    },
   }
 }
 

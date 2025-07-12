@@ -127,6 +127,9 @@ const create = (config: SimpleServerHttpConfig, options?: ExpressOptions) => {
 
   return {
     getApp,
+    set: (key: string, value: any) => {
+      app.set(key, value)
+    },
     start: async () => {
       const app = await getApp()
       app.listen(config.server.connection.port || DEFAULT_PORT)
